@@ -9,6 +9,21 @@ import HomeFilled from "@iconify-icons/ep/home-filled";
 import InformationLine from "@iconify-icons/ri/information-line";
 import Lollipop from "@iconify-icons/ep/lollipop";
 
+//二次开发
+import NodeIndex from "@iconify-icons/ant-design/node-index-outlined";
+import SafetyCertificate from "@iconify-icons/ant-design/safety-certificate-outlined";
+import Robot from "@iconify-icons/ant-design/robot-outlined";
+import Bug from "@iconify-icons/ant-design/bug-filled";
+import NER from "@iconify-icons/ri/character-recognition-line";
+
+//pureadmin源码
 addIcon("homeFilled", HomeFilled);
 addIcon("informationLine", InformationLine);
 addIcon("lollipop", Lollipop);
+
+//二次开发
+addIcon("nodeIndex", NodeIndex);
+addIcon("safetyCertificate", SafetyCertificate);
+addIcon("robot", Robot);
+addIcon("bug", Bug);
+addIcon("ner", NER);
