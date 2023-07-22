@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import GraphPanel from "./components/graphPanel.vue";
 defineOptions({
   name: "KnowledgeGraph"
 });
 </script>
 
 <template>
-  <div>知识图谱</div>
+  <div>
+    <GraphPanel />
+  </div>
 </template>
