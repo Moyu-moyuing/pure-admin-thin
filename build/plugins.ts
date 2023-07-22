@@ -10,6 +10,7 @@ import { visualizer } from "rollup-plugin-visualizer";
 import removeConsole from "vite-plugin-remove-console";
 import themePreprocessorPlugin from "@pureadmin/theme";
 import { genScssMultipleScopeVars } from "../src/layout/theme";
+import DefineOptions from "unplugin-vue-define-options/vite";
 
 export function getPluginsList(
   command: string,
@@ -19,6 +20,8 @@ export function getPluginsList(
   const prodMock = true;
   const lifecycle = process.env.npm_lifecycle_event;
   return [
+    //setup命名插件
+    DefineOptions(),
     vue(),
     // jsx、tsx语法支持
     vueJsx(),

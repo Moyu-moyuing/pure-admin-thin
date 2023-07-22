@@ -53,5 +53,6 @@ getServerConfig(app).then(async config => {
   // .use(useEcharts);
   // .use(Table);
   // .use(PureDescriptions);
+
   app.mount("#app");
 });
