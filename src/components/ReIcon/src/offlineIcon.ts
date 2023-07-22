@@ -14,6 +14,9 @@ import NodeIndex from "@iconify-icons/ant-design/node-index-outlined";
 import SafetyCertificate from "@iconify-icons/ant-design/safety-certificate-outlined";
 import Robot from "@iconify-icons/ant-design/robot-outlined";
 import Bug from "@iconify-icons/ant-design/bug-filled";
+import ZoomIn from "@iconify-icons/ep/zoom-in";
+import ZoomOut from "@iconify-icons/ep/zoom-out";
+import Refresh from "@iconify-icons/ep/refresh";
 import NER from "@iconify-icons/ri/character-recognition-line";
 
 //pureadmin源码
@@ -24,6 +27,9 @@ addIcon("lollipop", Lollipop);
 //二次开发
 addIcon("nodeIndex", NodeIndex);
 addIcon("safetyCertificate", SafetyCertificate);
+addIcon("refresh", Refresh);
 addIcon("robot", Robot);
 addIcon("bug", Bug);
+addIcon("zoomIn", ZoomIn);
+addIcon("zoomOut", ZoomOut);
 addIcon("ner", NER);
