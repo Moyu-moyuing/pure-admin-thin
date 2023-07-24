@@ -1,5 +1,12 @@
+<!-- 
+ * @description: //TODO
+ * @fileName: control.vue 
+ * @author: Moyu-moyuing
+ * @date: 2023-07-24 02:22:08
+ -->
 <script setup lang="ts">
 import { ref } from "vue";
+import { useControlD3StoreHook } from "@/store/modules/controlD3";
 //引入图标
 import ZoomIn from "@iconify-icons/ep/zoom-in";
 import ZoomOut from "@iconify-icons/ep/zoom-out";
@@ -11,41 +18,53 @@ defineOptions({
 //焦点索引
 const focusIndex = ref<Number>(-1);
 //控件数据
-
 const titleLists = ref([
   {
+    name: "zoomIn",
     icon: ZoomOut,
     text: "缩小",
     size: "18",
     disabled: false
   },
   {
+    name: "zoomOut",
     icon: ZoomIn,
     text: "放大",
     size: "18",
     disabled: false
   },
   {
+    name: "refresh",
     icon: Refresh,
     text: "自适应",
     size: "18",
     disabled: false
   },
   {
+    name: "search",
     icon: Search,
     text: "搜索关键字",
     size: "18",
     disabled: false
   }
 ]);
-
 //鼠标事件控制提示
-const onEnter = key => {
+const onEnter: (key: number) => void = key => {
   focusIndex.value = key;
 };
-const onControl = (item, key) => {
-  console.log(item, key);
+// //使用pinia传参
+const onControl: (name: string) => void = name => {
+  useControlD3StoreHook().updateControl(name);
 };
+// //发送事件声明
+// const emit = defineEmits<{
+//   (e: "eventControl", name: string);
+// }>();
+
+// const onControl: (name: string) => void = name => {
+//   emit("eventControl", name);
+// };
+//
 </script>
 
 <template>
@@ -57,7 +76,7 @@ const onControl = (item, key) => {
           v-for="(item, key) in titleLists"
           :key="key"
           :title="item.text"
-          class="dark:text-bg_color"
+          class="dark:text-bg_color text-bg_color"
           @mouseenter.prevent="onEnter(key)"
           @mouseleave.prevent="focusIndex = -1"
         >
@@ -67,15 +86,16 @@ const onControl = (item, key) => {
             placement="right"
           >
             <button
+              :id="`${item.name}`"
               :disabled="item.disabled"
               :style="{
                 cursor: item.disabled === false ? 'pointer' : 'not-allowed',
                 color: item.disabled === false ? '' : '#00000040',
                 background: 'transparent'
               }"
-              @click="onControl(item, key)"
+              @click="onControl(item.name)"
             >
-              <span>
+              <span class="dark:text-white text-black">
                 <IconifyIconOffline
                   :icon="item.icon"
                   :style="{ fontSize: `${item.size}px` }"
@@ -91,7 +111,7 @@ const onControl = (item, key) => {
 
 <style scoped>
 .control-container {
-  background: hsl(0deg 0% 100% / 80%);
+  /* background: hsl(0deg 0% 100% / 80%); */
   box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
 }
 
