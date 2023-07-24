@@ -1,3 +1,9 @@
+<!-- 
+ * @description: //TODO
+ * @fileName: index.vue 
+ * @author: Moyu-moyuing
+ * @date: 2023-07-24 20:32:42
+ -->
 <script setup lang="ts">
 defineOptions({
   name: "ChatRobot"
@@ -5,5 +11,5 @@ defineOptions({
 </script>
 
 <template>
-  <div>聊天机器人</div>
+  <h1>聊天机器人页面，正在开发中......</h1>
 </template>
