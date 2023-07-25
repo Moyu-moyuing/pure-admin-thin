@@ -11,7 +11,7 @@ defineOptions({
 </script>
 
 <template>
-  <el-card>
+  <el-card shadow="never" class="shadow-[0_4px_6px_-1px_rgb(128,128,128)]">
     <div class="text-black dark:text-white">
       <h2>节点信息面板</h2>
       <div>这是模拟数据</div>

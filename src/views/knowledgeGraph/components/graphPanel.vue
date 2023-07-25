@@ -8,10 +8,11 @@
 import * as d3 from "d3";
 import Control from "./control.vue";
 import NodePanel from "./nodePanel.vue";
-import { watch, onMounted } from "vue";
+import { ref, watch, onMounted } from "vue";
 // import { useControlD3StoreHook } from "@/store/modules/controlD3";
 import list from "../data.js";
 import { useControlD3StoreHook } from "@/store/modules/controlD3";
+
 defineOptions({
   name: "GraphPanel"
 });
@@ -33,6 +34,7 @@ defineOptions({
 
 //数据区
 const data = list;
+const scale = ref(1);
 //函数区
 const initGraph = () => {
   //数据节点集
@@ -61,16 +63,14 @@ const initGraph = () => {
   // 创建svg容器.
   const svg = d3
     .select("#force-container")
+    // .insert("svg", ".force-background")
     .append("svg")
     .attr("width", "100%")
     .attr("height", "100%")
-    // const g = svg
-    //   .append("g")
-    .attr("viewBox", [0, 0, width, height])
-    .attr("style", "width: 100%; height: 100%;");
+    .attr("viewBox", [0, 0, width, height]);
 
   //使用g节点包裹控制缩放
-  const g = svg.append("g");
+  const g = svg.append("g").attr("width", "100%").attr("height", "100%");
   //缩放事件
   const zoom = d3
     .zoom()
@@ -82,8 +82,12 @@ const initGraph = () => {
       [width, height]
     ])
     .on("zoom", () => {
+      const transform = d3.zoomTransform(svg.node());
       //@ts-ignore
-      g.attr("transform", d3.zoomTransform(svg.node()));
+      g.attr("transform", transform);
+      //响应式使得网格也缩放
+      scale.value = transform.k;
+
       //巨坑，调参，对g加变换参数，但回调和transform均是svg
       // 第二种写法
       //({transform})=>{g.attr("transform", transform);}
@@ -265,45 +269,87 @@ onMounted(() => {
 <template>
   <!-- <div>力导向图面板</div> -->
 
-  <el-card id="d3-container" shadow="never">
-    <div class="kg-view">
+  <el-card shadow="never">
+    <template #header>
+      <div class="text-center">
+        <span class="font-center text-xl">知识图谱可视化 </span>
+      </div>
+    </template>
+    <div class="relative m-2.5">
       <!-- 辅助工具栏 -->
-      <Control class="control-panel" />
+      <Control class="absolute top-3 left-3 z-[101] rounded-md opacity-90" />
       <!-- 节点信息面板 -->
-      <NodePanel class="node-panel" />
+      <NodePanel
+        class="absolute top-3 right-3 z-[101] w-1/5 h-[96%] text-center rounded-md opacity-90"
+      />
       <!-- 画布 -->
-      <div id="force-container" />
+
+      <div
+        id="force-container"
+        class="w-full h-full relative z-0 bg-white/[.03]"
+      >
+        <!-- <div class="bottom-0 left-0 right-0 top-0 absolute -z-[1] opacity-100">
+          <div class="h-full w-full" style="color: rgb(247, 249, 255)" />
+        </div> -->
+        <div
+          id="force-grid"
+          class="bottom-0 left-0 right-0 top-0 absolute -z-[1]"
+        >
+          <svg class="h-full w-full">
+            <defs>
+              <pattern
+                id="dots"
+                patternUnits="userSpaceOnUse"
+                :patternTransform="`scale(${scale},${scale})`"
+                x="0"
+                y="0"
+                width="20"
+                height="20"
+              >
+                <rect
+                  width="2"
+                  height="2"
+                  rx="1"
+                  ry="1"
+                  class="fill-gray-400 opacity-100"
+                />
+              </pattern>
+            </defs>
+            <rect class="w-full h-full" fill="url(#dots)" />
+          </svg>
+        </div>
+      </div>
     </div>
   </el-card>
 </template>
 
 <style lang="scss" scoped>
-.kg-view {
-  position: relative;
-  margin: 10px;
-}
+// .kg-view {
+//   position: relative;
+//   margin: 10px;
+// }
 
-.control-panel {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 101; //防止覆盖
-  border-radius: 6px;
-  //background-color: rgb(255 255 255 / 80%); //设置透明度
-  opacity: 0.7;
-}
+// .control-panel {
+//   position: absolute;
+//   top: 12px;
+//   left: 12px;
+//   z-index: 101; //防止覆盖
+//   border-radius: 6px;
+//   //background-color: rgb(255 255 255 / 80%); //设置透明度
+//   opacity: 0.9;
+// }
 
-.node-panel {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 101; //防止覆盖//防止覆盖
-  width: 20%;
-  height: 96%;
-  text-align: center;
-  border-radius: 6px;
-  opacity: 0.7;
-}
+// .node-panel {
+//   position: absolute;
+//   top: 12px;
+//   right: 12px;
+//   z-index: 101; //防止覆盖//防止覆盖
+//   width: 20%;
+//   height: 96%;
+//   text-align: center;
+//   border-radius: 6px;
+//   opacity: 0.9;
+// }
 
 // #node {
 //   // .attr("stroke", "#fff")
@@ -320,19 +366,32 @@ onMounted(() => {
 // .nodeName {
 //   fill: rgb(239, 1, 1);
 // }
+// .force-background {
+//   bottom: 0;
+//   left: 0;
+//   position: absolute;
+//   right: 0;
+//   top: 0;
+//   z-index: -1;
+// }
 
-#force-container {
-  // border-radius: 8px;
-  // background: #274271
-  //   repeating-linear-gradient(
-  //     45deg,
-  //     hsla(0, 0%, 100%, 0.1),
-  //     hsla(0, 0%, 100%, 0.1),
-  //     15px,
-  //     transparent 0,
-  //     transparent 30px
-  //   );
-  width: 100%;
-  height: 100%;
-}
+// .force-background-area {
+//   height: 100%;
+//   width: 100%;
+// }
+// #force-grid {
+//   bottom: 0;
+//   left: 0;
+//   position: absolute; //设置相对父组件漂浮
+//   right: 0;
+//   top: 0;
+//   z-index: -1; //设置访问隐藏，控制层级顺序否则两者的鼠标事件会冲突
+// }
+
+// #force-container {
+//   position: relative;
+//   width: 100%;
+//   height: 100%;
+//   z-index: 0;
+// }
 </style>
