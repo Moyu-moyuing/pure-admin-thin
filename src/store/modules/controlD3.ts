@@ -9,11 +9,19 @@ import { store } from "@/store";
 export const useControlD3Store = defineStore({
   id: "control-data",
   state: () => ({
-    control: ""
+    control: "",
+    showSearch: false,
+    hasData: false
   }),
   actions: {
     updateControl(newvalue: string): void {
       this.control = newvalue;
+    },
+    updateShowValue() {
+      this.showSearch = !this.showSearch;
+    },
+    updateHasData() {
+      this.hasData = !this.hasData;
     }
   }
 });
