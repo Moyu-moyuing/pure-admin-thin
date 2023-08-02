@@ -8,10 +8,11 @@
 import * as d3 from "d3";
 import Control from "./control.vue";
 import NodePanel from "./nodePanel.vue";
-import { ref, watch, onMounted } from "vue";
-// import { useControlD3StoreHook } from "@/store/modules/controlD3";
-import list from "../data.js";
+import SearchNodes from "./searchNodes.vue";
+import { ref, Ref, onMounted } from "vue";
 import { useControlD3StoreHook } from "@/store/modules/controlD3";
+import { List, getAllDatas, getDatasByName } from "@/api/kgData";
+// import list from "../data/data.js";
 
 defineOptions({
   name: "GraphPanel"
@@ -20,7 +21,7 @@ defineOptions({
 //   nodes: [] as any,
 //   links: [] as any
 // });
-// const data = {
+// const datas = {
 //   nodes: [
 //     { id: "郭靖", group: 1 },
 //     { id: "黄蓉", group: 1 },
@@ -33,46 +34,57 @@ defineOptions({
 // };
 
 //数据区
-const data = list;
-const scale = ref(1);
-//函数区
-const initGraph = () => {
-  //数据节点集
-  // The force simulation mutates links and nodes, so create a copy
-  // so that re-evaluating this cell produces the same result.
-  const links = data.links.map(d => ({ ...d }));
-  const nodes = data.nodes.map(d => ({ ...d }));
-  // Specify the dimensions of the chart.
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  // Specify the color scale.
-  const color = d3.scaleOrdinal(d3.schemeCategory10);
+let data: List;
 
+const scale: Ref<number> = ref(1);
+
+let links: any;
+let nodes: any;
+let zoom: d3.ZoomBehavior<Element, unknown>;
+let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>;
+const color: d3.ScaleOrdinal<string, string, never> = d3.scaleOrdinal(
+  d3.schemeCategory10
+);
+const nodeInfo = ref(null);
+const linkInfo = ref(null);
+const nodecolor = ref("");
+// Specify the dimensions of the chart.
+const width: number = window.innerWidth;
+const height: number = window.innerHeight;
+// Specify the color scale.
+// const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+//函数区
+// const initData = () => {
+//   getAll();
+//   const link = datas.links.map((d: any) => ({ ...d }));
+//   console.log(data.links);
+
+//   console.log(link);
+
+//   const node = datas.nodes.map((d: any) => ({ ...d }));
+//   console.log(node);
+//   console.log(data.nodes);
+
+// };
+const initConfig = () => {
   //力导向图
-  const simulation = d3
+  simulation = d3
+    //ts-ignore
     .forceSimulation(nodes)
     .force(
       "link",
       //@ts-ignore 忽略类型检查
-      d3.forceLink(links).id(d => d.id)
+      d3.forceLink(links).id(d => d.name)
     )
-    .force("charge", d3.forceManyBody())
-    .force("center", d3.forceCenter(width / 2, height / 2))
-    .on("tick", linksTick);
+    .force(
+      "collide",
+      d3.forceCollide().radius(() => 40)
+    ) //设置碰撞半径
+    .force("charge", d3.forceManyBody().strength(-30))
+    .force("center", d3.forceCenter(width / 2, height / 2));
 
-  // 创建svg容器.
-  const svg = d3
-    .select("#force-container")
-    // .insert("svg", ".force-background")
-    .append("svg")
-    .attr("width", "100%")
-    .attr("height", "100%")
-    .attr("viewBox", [0, 0, width, height]);
-
-  //使用g节点包裹控制缩放
-  const g = svg.append("g").attr("width", "100%").attr("height", "100%");
-  //缩放事件
-  const zoom = d3
+  zoom = d3
     .zoom()
     //设置缩放范围
     .scaleExtent([0.2, 3])
@@ -80,43 +92,39 @@ const initGraph = () => {
     .extent([
       [0, 0],
       [width, height]
-    ])
-    .on("zoom", () => {
-      const transform = d3.zoomTransform(svg.node());
-      //@ts-ignore
-      g.attr("transform", transform);
-      //响应式使得网格也缩放
-      scale.value = transform.k;
-
-      //巨坑，调参，对g加变换参数，但回调和transform均是svg
-      // 第二种写法
-      //({transform})=>{g.attr("transform", transform);}
-
-      // const transform = d3.zoomTransform(g.node());
-      // g.attr(
-      //   "transform",
-      //   "scale(" + transform.k + ")"
-      //   // "translate(" +
-      //   //   -transform.x +
-      //   //   "," +
-      //   //   -transform.y +
-      //   //   ") scale(" +
-      //   //   transform.k +
-      //   //   ")"
-      // );
+    ]);
+};
+const renderGraph = () => {
+  // 创建svg容器.
+  const svg = d3
+    .select("#force-container")
+    // .insert("svg", ".force-background")
+    .append("svg")
+    .attr("id", "d3-svg")
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("viewBox", [0, 0, width, height])
+    .on("click", () => {
+      //点击空白处节点面板刷新数据
+      if (useControlD3StoreHook().hasData) {
+        useControlD3StoreHook().updateHasData();
+      }
     });
+
+  //使用g节点包裹控制缩放
+  const g = svg.append("g").attr("width", "100%").attr("height", "100%");
+  //缩放事件
+  zoom.on("zoom", () => {
+    const transform = d3.zoomTransform(svg.node());
+    //@ts-ignore
+    g.attr("transform", transform);
+    //响应式使得网格也缩放
+    scale.value = transform.k;
+  });
   svg
     .call(zoom)
     .on("wheel.zoom", null) //禁用滚轮放大缩小
     .on("dblclick.zoom", null); //禁用双击放大缩小
-
-  //这里只对svg加回调，而非g加
-  /* 优化的可能？把d3的这些数据放外面使用ref，reactive改造
-   * 成响应式数据，这样使用wacth监视而去响应事件而非直接操作dom
-   * 节点，但是d3的数据经过ref改造后？ts类型是否是不兼容？
-   * 归根到底，vue3的语法糖setup无法直接在子函数作用域内进行
-   * 编写watch的API
-   */
   d3.select("#zoomIn").on("click", () => {
     zoom.scaleBy(svg, 0.9);
   });
@@ -126,15 +134,6 @@ const initGraph = () => {
   d3.select("#refresh").on("click", () => {
     svg.call(zoom.transform, d3.zoomIdentity);
   });
-
-  // if (useControlD3StoreHook().control === "zoomIn") {
-  //       zoom.scaleBy(svg, 1.1);
-  //     } else if (useControlD3StoreHook().control === "zoomOut") {
-  //       zoom.scaleBy(svg, 0.9);
-  //     } else if (useControlD3StoreHook().control === "refresh") {
-  //       svg.call(zoom.transform, d3.zoomIdentity);
-  //     }
-
   // 画链接.
   const link = g
     .append("g")
@@ -144,7 +143,7 @@ const initGraph = () => {
     .data(links)
     .join("line")
     //@ts-ignore 忽略类型检查
-    .attr("stroke-width", d => Math.sqrt(d.value));
+    .attr("stroke-width", () => Math.sqrt(5));
 
   //画节点
   const node = g
@@ -164,18 +163,11 @@ const initGraph = () => {
     })
     .on("mouseout", e => {
       d3.select(e.target).transition().attr("stroke-width", 5);
-    });
-
-  // node.selectAll("circle")
-  // .on("mouseover", () => {
-  //   node.attr("stroke-width", 3);
-  // })
-  // .on("mouseout", () => {
-  //   node.attr("stroke-width", 1.5);
-  // });
+    })
+    .on("click", getNodeInfo);
 
   //@ts-ignore 忽略类型检查
-  node.append("title").text(d => d.id);
+  node.append("title").text(d => d.name);
 
   const nodeNameText = g
     .append("g")
@@ -195,9 +187,8 @@ const initGraph = () => {
       "font-family",
       "-apple-system, system-ui, avenir, helvetica, roboto, noto, arial"
     )
-    // .attr("class", "node-name")
     //@ts-ignore 忽略类型检查
-    .text(d => d.id);
+    .text(d => d.name);
 
   // Add a drag behavior.
   node.call(drag(simulation, g));
@@ -216,14 +207,22 @@ const initGraph = () => {
     //@ts-ignore 忽略类型检查
     nodeNameText.attr("x", d => d.x).attr("y", d => d.y);
   }
+  simulation.on("tick", linksTick);
   //生成节点数据
   // Create a simulation with several forces.
   // Set the position attributes of links and nodes each time the simulation ticks.
   return svg.node();
 };
-const drag = (simulation, g) => {
+
+const drag = (
+  simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>,
+  g: d3.Selection<SVGGElement, unknown, HTMLElement, any>
+) => {
   // Reheat the simulation when drag starts, and fix the subject position.
-  function dragstarted(event) {
+  function dragstarted(event: {
+    active: any;
+    subject: { fx: any; x: any; fy: any; y: any };
+  }) {
     if (!event.active) simulation.alphaTarget(0.3).restart();
     g.attr("cursor", "grabbing");
     event.subject.fx = event.subject.x;
@@ -231,14 +230,14 @@ const drag = (simulation, g) => {
   }
 
   // Update the subject (dragged node) position during drag.
-  function dragged(event) {
+  function dragged(event: { subject: { fx: any; fy: any }; x: any; y: any }) {
     event.subject.fx = event.x;
     event.subject.fy = event.y;
   }
 
   // Restore the target alpha so the simulation cools after dragging ends.
   // Unfix the subject position now that it’s no longer being dragged.
-  function dragended(event) {
+  function dragended(event: { active: any; subject: { fx: any; fy: any } }) {
     if (!event.active) simulation.alphaTarget(0);
     g.attr("cursor", "grab");
     event.subject.fx = null;
@@ -250,19 +249,92 @@ const drag = (simulation, g) => {
     .on("drag", dragged)
     .on("end", dragended);
 };
-watch(
-  () => useControlD3StoreHook().control,
-  (newValue, oldValue) => {
-    console.log(newValue, oldValue);
-    /* 如果是搜索值，则
-     * data=newdata(后端返回)
-     * update(graph)
-     */
+const clearGraph = () => {
+  d3.select("#d3-svg").remove();
+};
+const eventControl: (name: string) => void = name => {
+  console.log(name);
+  if (name === "reset") {
+    clearGraph();
+    scale.value = 1;
+    init();
+  } else if (name === "search") {
+    useControlD3StoreHook().updateShowValue();
   }
-);
+};
+async function getNodeInfo(e: any, d: any) {
+  //需要优化，查节点应该由后端做
+  await getDatasByName({ name: d.name }).then(result => {
+    if (result.success) {
+      nodeInfo.value = result.data.kgDatas.nodes.find(
+        item => item.name === d.name
+      );
+      linkInfo.value = result.data.kgDatas.links;
+      nodecolor.value = "" + color(nodeInfo.value.group);
+      if (!useControlD3StoreHook().hasData)
+        useControlD3StoreHook().updateHasData();
+    }
+  });
+}
+async function searchNodes(value: string) {
+  await getDatasByName({ name: value }).then(result => {
+    if (result.success) {
+      data = result.data.kgDatas;
+      links = data.links;
+      nodes = data.nodes;
+      nodeInfo.value = nodes.find(item => item.name === value);
+      linkInfo.value = links;
+      nodecolor.value = color(nodeInfo.value.group);
+      //需要后端优化——返回erro捕捉catch回调，现使用setTimeout保证link不会因为init污染
+      setTimeout(() => {
+        clearGraph();
+        initConfig();
+        renderGraph();
+      }, 3000);
+
+      if (!useControlD3StoreHook().hasData)
+        useControlD3StoreHook().updateHasData();
+    } else {
+      clearGraph();
+      scale.value = 1;
+      init();
+    }
+  });
+}
+
+// const Test = () => {
+//   setTimeout(() => {
+//     clearGraph();
+//     initData();
+//     initConfig();
+//     renderGraph();
+//   }, 3000);
+// };
+async function init() {
+  await getAllDatas().then(result => {
+    if (result.success) {
+      data = result.data.kgDatas;
+      links = data.links;
+      nodes = data.nodes;
+      initConfig();
+      renderGraph();
+    }
+  });
+}
+//vue API 区
+// watch(
+//   () => useControlD3StoreHook().control,
+//   (newValue, oldValue) => {
+//     console.log(newValue, oldValue);
+//     /* 如果是搜索值，则
+//      * data=newdata(后端返回)
+//      * update(graph)
+//      */
+//   }
+// );
 
 onMounted(() => {
-  initGraph();
+  init();
 });
 </script>
 
@@ -276,26 +348,23 @@ onMounted(() => {
       </div>
     </template>
     <div class="relative m-2.5">
-      <!-- 辅助工具栏 -->
-      <Control class="absolute top-3 left-3 z-[101] rounded-md opacity-90" />
-      <!-- 节点信息面板 -->
-      <NodePanel
-        class="absolute top-3 right-3 z-[101] w-1/5 h-[96%] text-center rounded-md opacity-90"
-      />
       <!-- 画布 -->
-
       <div
         id="force-container"
         class="w-full h-full relative z-0 bg-white/[.03]"
       >
-        <!-- <div class="bottom-0 left-0 right-0 top-0 absolute -z-[1] opacity-100">
-          <div class="h-full w-full" style="color: rgb(247, 249, 255)" />
-        </div> -->
         <div
           id="force-grid"
-          class="bottom-0 left-0 right-0 top-0 absolute -z-[1]"
+          class="w-full h-full bottom-0 left-0 right-0 top-0 absolute -z-[1]"
         >
-          <svg class="h-full w-full">
+          <!--这里用tailwindcss加载不出网格？只能用内联样式-->
+          <svg
+            width="100%"
+            height="100%"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            version="1.1"
+          >
             <defs>
               <pattern
                 id="dots"
@@ -315,83 +384,23 @@ onMounted(() => {
                 />
               </pattern>
             </defs>
-            <rect class="w-full h-full" fill="url(#dots)" />
+            <rect width="100%" height="100%" fill="url(#dots)" />
           </svg>
         </div>
       </div>
+      <!-- 辅助工具栏 -->
+      <Control
+        class="absolute top-3 left-3 z-[101] rounded-md opacity-90"
+        @eventControl="eventControl"
+      />
+      <!-- 节点信息面板 -->
+      <NodePanel
+        :node="nodeInfo"
+        :links="linkInfo"
+        :color="nodecolor"
+        class="absolute top-3 right-3 z-[101] w-1/5 h-[96%] text-center rounded-md opacity-90"
+      />
     </div>
+    <SearchNodes @search-nodes="searchNodes" />
   </el-card>
 </template>
-
-<style lang="scss" scoped>
-// .kg-view {
-//   position: relative;
-//   margin: 10px;
-// }
-
-// .control-panel {
-//   position: absolute;
-//   top: 12px;
-//   left: 12px;
-//   z-index: 101; //防止覆盖
-//   border-radius: 6px;
-//   //background-color: rgb(255 255 255 / 80%); //设置透明度
-//   opacity: 0.9;
-// }
-
-// .node-panel {
-//   position: absolute;
-//   top: 12px;
-//   right: 12px;
-//   z-index: 101; //防止覆盖//防止覆盖
-//   width: 20%;
-//   height: 96%;
-//   text-align: center;
-//   border-radius: 6px;
-//   opacity: 0.9;
-// }
-
-// #node {
-//   // .attr("stroke", "#fff")
-//   //   .attr("stroke-width", 1.5)
-//   stroke: #fff;
-//   stroke-width: 1.5;
-//   cursor: pointer;
-// }
-
-// #node:hover {
-//   stroke-width: 5;
-// }
-
-// .nodeName {
-//   fill: rgb(239, 1, 1);
-// }
-// .force-background {
-//   bottom: 0;
-//   left: 0;
-//   position: absolute;
-//   right: 0;
-//   top: 0;
-//   z-index: -1;
-// }
-
-// .force-background-area {
-//   height: 100%;
-//   width: 100%;
-// }
-// #force-grid {
-//   bottom: 0;
-//   left: 0;
-//   position: absolute; //设置相对父组件漂浮
-//   right: 0;
-//   top: 0;
-//   z-index: -1; //设置访问隐藏，控制层级顺序否则两者的鼠标事件会冲突
-// }
-
-// #force-container {
-//   position: relative;
-//   width: 100%;
-//   height: 100%;
-//   z-index: 0;
-// }
-</style>
