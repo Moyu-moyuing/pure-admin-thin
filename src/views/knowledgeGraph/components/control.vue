@@ -6,12 +6,13 @@
  -->
 <script setup lang="ts">
 import { ref } from "vue";
-import { useControlD3StoreHook } from "@/store/modules/controlD3";
+// import { useControlD3StoreHook } from "@/store/modules/controlD3";
 //引入图标
 import ZoomIn from "@iconify-icons/ep/zoom-in";
 import ZoomOut from "@iconify-icons/ep/zoom-out";
 import Refresh from "@iconify-icons/ep/refresh";
 import Search from "@iconify-icons/ep/search";
+import Reset from "@iconify-icons/ant-design/fullscreen-exit-outlined";
 defineOptions({
   name: "Control"
 });
@@ -35,8 +36,15 @@ const titleLists = ref([
   },
   {
     name: "refresh",
-    icon: Refresh,
+    icon: Reset,
     text: "自适应",
+    size: "18",
+    disabled: false
+  },
+  {
+    name: "reset",
+    icon: Refresh,
+    text: "刷新",
     size: "18",
     disabled: false
   },
@@ -53,17 +61,17 @@ const onEnter: (key: number) => void = key => {
   focusIndex.value = key;
 };
 // //使用pinia传参
-const onControl: (name: string) => void = name => {
-  useControlD3StoreHook().updateControl(name);
-};
-// //发送事件声明
-// const emit = defineEmits<{
-//   (e: "eventControl", name: string);
-// }>();
-
 // const onControl: (name: string) => void = name => {
-//   emit("eventControl", name);
+//   useControlD3StoreHook().updateControl(name);
 // };
+// //发送事件声明
+const emit = defineEmits<{
+  (e: "eventControl", name: string);
+}>();
+
+const onControl: (name: string) => void = name => {
+  emit("eventControl", name);
+};
 //
 </script>
 
@@ -112,21 +120,3 @@ const onControl: (name: string) => void = name => {
     </ul>
   </el-card>
 </template>
-
-<style scoped>
-/* 在此处为el-card加样式padding无用，使用其接口对其body增加样式 */
-
-/* .control-container {
-  box-shadow: 0 0 10px 1px #808080;
-  
-} */
-
-/* .control-container ul li {
-  margin: 10px;
-  text-align: center;
-} */
-
-/* .control-container ul li span:hover {
-  color: #409eff;
-} */
-</style>
