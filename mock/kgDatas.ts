@@ -16,7 +16,8 @@ const list = {
     { source: "林夫人", target: "龙霸天", relationship: "爱慕" },
     { source: "李寻欢", target: "龙霸天", relationship: "结义" },
     { source: "龙霸天", target: "李寻欢", relationship: "结义" }
-  ]
+  ],
+  relations: ["爱慕", "结义"]
 };
 
 export default [
@@ -29,7 +30,8 @@ export default [
         data: {
           kgDatas: list,
           nodeLength: list.nodes.length,
-          linkLength: list.links.length
+          linkLength: list.links.length,
+          relations: list.relations
         }
       };
     }
@@ -47,6 +49,40 @@ export default [
         const newNodes = list.nodes.filter(object => {
           if (
             list.links.find(
+              item => item.source === object.name || item.target === object.name
+            )
+          ) {
+            return true;
+          } else return false;
+        });
+        const newList = {
+          nodes: newNodes,
+          links: newLinks
+        };
+        return {
+          success: true,
+          data: {
+            kgDatas: newList,
+            nodeLength: newList.nodes.length,
+            linkLength: newList.links.length
+          }
+        };
+      }
+    }
+  },
+  {
+    url: "/kg/relations",
+    method: "get",
+    response: ({ query }) => {
+      if (!list.links.find(item => item.relationship === query.relations)) {
+        return { success: false, data: {} };
+      } else {
+        const newLinks = list.links.filter(
+          object => object.relationship === query.relations
+        );
+        const newNodes = list.nodes.filter(object => {
+          if (
+            newLinks.find(
               item => item.source === object.name || item.target === object.name
             )
           ) {
