@@ -14,24 +14,41 @@ export type List = {
   nodes: Array<Node>;
   links: Array<Link>;
 };
+export type allKgDataResult = {
+  success: boolean;
+  data: {
+    /** Neo4j数据 */
+    kgDatas: List;
+    /** 节点数 */
+    nodeLength: number;
+    /** 链接数 */
+    linkLength: number;
+    /** 关系 */
+    relations: Array<string>;
+  };
+};
 export type KgDataResult = {
   success: boolean;
   data: {
     /** Neo4j数据 */
     kgDatas: List;
-    /** 当前登陆用户的角色 */
+    /** 节点数 */
     nodeLength: number;
-    /** `token` */
+    /** 链接数 */
     linkLength: number;
   };
 };
-
 /** 查询所有 */
 export const getAllDatas = () => {
-  return http.request<KgDataResult>("get", "/kg/all");
+  return http.request<allKgDataResult>("get", "/kg/all");
 };
 
 /** 根据姓名查询 */
 export const getDatasByName = (params?: object) => {
   return http.request<KgDataResult>("get", "/kg/name", { params });
+};
+
+/** 根据联系查询 */
+export const getDatasByRelation = (params?: object) => {
+  return http.request<KgDataResult>("get", "/kg/relations", { params });
 };
