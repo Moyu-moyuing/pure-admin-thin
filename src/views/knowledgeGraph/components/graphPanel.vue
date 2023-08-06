@@ -11,27 +11,17 @@ import NodePanel from "./nodePanel.vue";
 import SearchNodes from "./searchNodes.vue";
 import { ref, Ref, onMounted } from "vue";
 import { useControlD3StoreHook } from "@/store/modules/controlD3";
-import { List, getAllDatas, getDatasByName } from "@/api/kgData";
+import {
+  List,
+  getAllDatas,
+  getDatasByName,
+  getDatasByRelation
+} from "@/api/kgData";
 // import list from "../data/data.js";
 
 defineOptions({
   name: "GraphPanel"
 });
-// const data = reactive({
-//   nodes: [] as any,
-//   links: [] as any
-// });
-// const datas = {
-//   nodes: [
-//     { id: "郭靖", group: 1 },
-//     { id: "黄蓉", group: 1 },
-//     { id: "杨康", group: 2 }
-//   ],
-//   links: [
-//     { source: "郭靖", target: "黄蓉", value: 1 },
-//     { source: "郭靖", target: "杨康", value: 2 }
-//   ]
-// };
 
 //数据区
 let data: List;
@@ -48,6 +38,8 @@ const color: d3.ScaleOrdinal<string, string, never> = d3.scaleOrdinal(
 const nodeInfo = ref(null);
 const linkInfo = ref(null);
 const nodecolor = ref("");
+const allLinks = ref(null);
+const relationTag = ref("");
 // Specify the dimensions of the chart.
 const width: number = window.innerWidth;
 const height: number = window.innerHeight;
@@ -74,8 +66,11 @@ const initConfig = () => {
     .forceSimulation(nodes)
     .force(
       "link",
-      //@ts-ignore 忽略类型检查
-      d3.forceLink(links).id(d => d.name)
+      d3
+        .forceLink(links)
+        //@ts-ignore 忽略类型检查
+        .id(d => d.name)
+        .distance(200)
     )
     .force(
       "collide",
@@ -110,7 +105,25 @@ const renderGraph = () => {
         useControlD3StoreHook().updateHasData();
       }
     });
-
+  //画箭头
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+  const marker = svg
+    .append("marker")
+    .attr("id", "direction")
+    .attr("orient", "auto")
+    .attr("stroke-width", 2)
+    .attr("markerUnits", "strokeWidth")
+    .attr("markerUnits", "userSpaceOnUse")
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 35)
+    .attr("refY", 0)
+    .attr("markerWidth", 12)
+    .attr("markerHeight", 12)
+    .attr("orient", "auto")
+    .append("path")
+    .attr("d", "M 0 -5 L 10 0 L 0 5")
+    .attr("fill", "#999")
+    .attr("stroke-opacity", 0.6);
   //使用g节点包裹控制缩放
   const g = svg.append("g").attr("width", "100%").attr("height", "100%");
   //缩放事件
@@ -139,11 +152,18 @@ const renderGraph = () => {
     .append("g")
     .attr("stroke", "#999")
     .attr("stroke-opacity", 0.6)
-    .selectAll()
+    .attr("marker-end", "url(#direction)")
+    .selectAll("path")
     .data(links)
-    .join("line")
+    .join("path")
     //@ts-ignore 忽略类型检查
-    .attr("stroke-width", () => Math.sqrt(5));
+    .attr("stroke-width", () => Math.sqrt(5))
+    //@ts-ignore 忽略类型检查
+    .attr(
+      "id",
+      //@ts-ignore 忽略类型检查
+      d => d.source.name + "_" + d.relationship + "_" + d.target.name
+    );
 
   //画节点
   const node = g
@@ -152,7 +172,7 @@ const renderGraph = () => {
     .data(nodes)
     .join("circle")
     .attr("r", 30)
-    .attr("opacity", 0.7)
+    .attr("opacity", 1)
     //@ts-ignore 忽略类型检查.
     .attr("fill", d => color(d.group))
     //@ts-ignore 忽略类型检查.
@@ -169,6 +189,26 @@ const renderGraph = () => {
   //@ts-ignore 忽略类型检查
   node.append("title").text(d => d.name);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+  const linkNameText = g
+    .append("g")
+    .selectAll("text")
+    .data(links)
+    .join("text")
+    .attr("text-anchor", "middle")
+    .attr("fill", "#999")
+    .attr("font-size", 20 + "px")
+    .attr("font-weight", "bold")
+    .append("textPath")
+    .attr(
+      "xlink:href",
+      //@ts-ignore 忽略类型检查
+      d => "#" + d.source.name + "_" + d.relationship + "_" + d.target.name
+    )
+    .attr("startOffset", "50%")
+    //@ts-ignore 忽略类型检查
+    .text(d => d.relationship);
+
   const nodeNameText = g
     .append("g")
     .selectAll("text")
@@ -182,7 +222,7 @@ const renderGraph = () => {
     .style("cursor", "grab")
     .attr("fill", "white")
     .attr("opacity", 1)
-    .attr("font-size", 30 / 4 + "px")
+    .attr("font-size", 30 / 2.5 + "px")
     .attr(
       "font-family",
       "-apple-system, system-ui, avenir, helvetica, roboto, noto, arial"
@@ -194,14 +234,22 @@ const renderGraph = () => {
   node.call(drag(simulation, g));
   //为导向图添加Tick事件
   function linksTick() {
-    link //@ts-ignore 忽略类型检查
-      .attr("x1", d => d.source.x)
-      //@ts-ignore 忽略类型检查
-      .attr("y1", d => d.source.y)
-      //@ts-ignore 忽略类型检查
-      .attr("x2", d => d.target.x)
-      //@ts-ignore 忽略类型检查
-      .attr("y2", d => d.target.y);
+    link.attr(
+      "d",
+      d =>
+        "M " +
+        //@ts-ignore 忽略类型检查
+        d.source.x +
+        " " +
+        //@ts-ignore 忽略类型检查
+        d.source.y +
+        " L " +
+        //@ts-ignore 忽略类型检查
+        d.target.x +
+        " " +
+        //@ts-ignore 忽略类型检查
+        d.target.y
+    );
     //@ts-ignore 忽略类型检查
     node.attr("cx", d => d.x).attr("cy", d => d.y);
     //@ts-ignore 忽略类型检查
@@ -257,11 +305,32 @@ const eventControl: (name: string) => void = name => {
   if (name === "reset") {
     clearGraph();
     scale.value = 1;
+    if (useControlD3StoreHook().hasData)
+      useControlD3StoreHook().updateHasData();
+    relationTag.value = "";
     init();
   } else if (name === "search") {
     useControlD3StoreHook().updateShowValue();
   }
 };
+async function tagSelect(value: string) {
+  relationTag.value = value;
+  if (useControlD3StoreHook().hasData) useControlD3StoreHook().updateHasData();
+  await getDatasByRelation({ relations: value }).then(result => {
+    if (result.success) {
+      data = result.data.kgDatas;
+      links = data.links;
+      nodes = data.nodes;
+      clearGraph();
+      initConfig();
+      renderGraph();
+    } else {
+      clearGraph();
+      scale.value = 1;
+      init();
+    }
+  });
+}
 async function getNodeInfo(e: any, d: any) {
   //需要优化，查节点应该由后端做
   await getDatasByName({ name: d.name }).then(result => {
@@ -269,7 +338,13 @@ async function getNodeInfo(e: any, d: any) {
       nodeInfo.value = result.data.kgDatas.nodes.find(
         item => item.name === d.name
       );
-      linkInfo.value = result.data.kgDatas.links;
+      if (relationTag.value != "") {
+        linkInfo.value = result.data.kgDatas.links.filter(
+          item => item.relationship === relationTag.value
+        );
+      } else {
+        linkInfo.value = result.data.kgDatas.links;
+      }
       nodecolor.value = "" + color(nodeInfo.value.group);
       if (!useControlD3StoreHook().hasData)
         useControlD3StoreHook().updateHasData();
@@ -283,14 +358,14 @@ async function searchNodes(value: string) {
       links = data.links;
       nodes = data.nodes;
       nodeInfo.value = nodes.find(item => item.name === value);
+      //links由于被init污染，需要浅拷贝
       linkInfo.value = links;
       nodecolor.value = color(nodeInfo.value.group);
       //需要后端优化——返回erro捕捉catch回调，现使用setTimeout保证link不会因为init污染
-      setTimeout(() => {
-        clearGraph();
-        initConfig();
-        renderGraph();
-      }, 3000);
+
+      clearGraph();
+      initConfig();
+      renderGraph();
 
       if (!useControlD3StoreHook().hasData)
         useControlD3StoreHook().updateHasData();
@@ -302,20 +377,13 @@ async function searchNodes(value: string) {
   });
 }
 
-// const Test = () => {
-//   setTimeout(() => {
-//     clearGraph();
-//     initData();
-//     initConfig();
-//     renderGraph();
-//   }, 3000);
-// };
 async function init() {
   await getAllDatas().then(result => {
     if (result.success) {
       data = result.data.kgDatas;
       links = data.links;
       nodes = data.nodes;
+      allLinks.value = result.data.relations;
       initConfig();
       renderGraph();
     }
@@ -398,6 +466,8 @@ onMounted(() => {
         :node="nodeInfo"
         :links="linkInfo"
         :color="nodecolor"
+        :all-links="allLinks"
+        @tag-select="tagSelect"
         class="absolute top-3 right-3 z-[101] w-1/5 h-[96%] text-center rounded-md opacity-90"
       />
     </div>
