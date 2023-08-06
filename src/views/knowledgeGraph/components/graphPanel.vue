@@ -358,10 +358,10 @@ async function searchNodes(value: string) {
       links = data.links;
       nodes = data.nodes;
       nodeInfo.value = nodes.find(item => item.name === value);
-      //links由于被init污染，需要浅拷贝
-      linkInfo.value = links;
+      //links为引用类型，并且是响应式数据，由于被init污染，需要深拷贝
+      linkInfo.value = deepClone(links);
       nodecolor.value = color(nodeInfo.value.group);
-      //需要后端优化——返回erro捕捉catch回调，现使用setTimeout保证link不会因为init污染
+      //需要后端优化——返回erro捕捉catch回调
 
       clearGraph();
       initConfig();
@@ -389,6 +389,21 @@ async function init() {
     }
   });
 }
+//深拷贝方法
+function deepClone(obj) {
+  const target = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (typeof obj[key] === "object") {
+        target[key] = deepClone(obj[key]);
+      } else {
+        target[key] = obj[key];
+      }
+    }
+  }
+  return target;
+}
+
 //vue API 区
 // watch(
 //   () => useControlD3StoreHook().control,
