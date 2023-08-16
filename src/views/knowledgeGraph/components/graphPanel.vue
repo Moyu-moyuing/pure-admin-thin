@@ -10,9 +10,12 @@ import Control from "./control.vue";
 import NodePanel from "./nodePanel.vue";
 import SearchNodes from "./searchNodes.vue";
 import { ref, Ref, onMounted } from "vue";
+import { cloneDeep } from "@pureadmin/utils";
 import { useControlD3StoreHook } from "@/store/modules/controlD3";
 import {
   List,
+  Node,
+  Link,
   getAllDatas,
   getDatasByName,
   getDatasByRelation
@@ -24,10 +27,10 @@ defineOptions({
 });
 
 //数据区
+/**
+ * d3相关数据定义
+ */
 let data: List;
-
-const scale: Ref<number> = ref(1);
-
 let links: any;
 let nodes: any;
 let zoom: d3.ZoomBehavior<Element, unknown>;
@@ -35,31 +38,20 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>;
 const color: d3.ScaleOrdinal<string, string, never> = d3.scaleOrdinal(
   d3.schemeCategory10
 );
-const nodeInfo = ref(null);
-const linkInfo = ref(null);
-const nodecolor = ref("");
-const allLinks = ref(null);
-const relationTag = ref("");
-// Specify the dimensions of the chart.
 const width: number = window.innerWidth;
 const height: number = window.innerHeight;
-// Specify the color scale.
-// const color = d3.scaleOrdinal(d3.schemeCategory10);
+/**
+ * 响应式数据定义
+ */
+const scale: Ref<number> = ref(1);
+const nodeInfo: Ref<Node> = ref(null);
+const linkInfo: Ref<Array<Link>> = ref(null);
+const nodecolor: Ref<string> = ref("");
+const allLinks: Ref<string[]> = ref(null);
+const relationTag: Ref<string> = ref("");
 
 //函数区
-// const initData = () => {
-//   getAll();
-//   const link = datas.links.map((d: any) => ({ ...d }));
-//   console.log(data.links);
-
-//   console.log(link);
-
-//   const node = datas.nodes.map((d: any) => ({ ...d }));
-//   console.log(node);
-//   console.log(data.nodes);
-
-// };
-const initConfig = () => {
+const initConfig: () => void = () => {
   //力导向图
   simulation = d3
     //ts-ignore
@@ -89,11 +81,11 @@ const initConfig = () => {
       [width, height]
     ]);
 };
-const renderGraph = () => {
+
+const renderGraph: () => SVGSVGElement = () => {
   // 创建svg容器.
-  const svg = d3
+  const svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any> = d3
     .select("#force-container")
-    // .insert("svg", ".force-background")
     .append("svg")
     .attr("id", "d3-svg")
     .attr("width", "100%")
@@ -107,7 +99,7 @@ const renderGraph = () => {
     });
   //画箭头
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
-  const marker = svg
+  const marker: d3.Selection<SVGPathElement, unknown, HTMLElement, any> = svg
     .append("marker")
     .attr("id", "direction")
     .attr("orient", "auto")
@@ -116,7 +108,7 @@ const renderGraph = () => {
     .attr("markerUnits", "userSpaceOnUse")
     .attr("viewBox", "0 -5 10 10")
     .attr("refX", 35)
-    .attr("refY", 0)
+    .attr("refY", -2.5)
     .attr("markerWidth", 12)
     .attr("markerHeight", 12)
     .attr("orient", "auto")
@@ -125,7 +117,10 @@ const renderGraph = () => {
     .attr("fill", "#999")
     .attr("stroke-opacity", 0.6);
   //使用g节点包裹控制缩放
-  const g = svg.append("g").attr("width", "100%").attr("height", "100%");
+  const g: d3.Selection<SVGGElement, unknown, HTMLElement, any> = svg
+    .append("g")
+    .attr("width", "100%")
+    .attr("height", "100%");
   //缩放事件
   zoom.on("zoom", () => {
     const transform = d3.zoomTransform(svg.node());
@@ -148,16 +143,22 @@ const renderGraph = () => {
     svg.call(zoom.transform, d3.zoomIdentity);
   });
   // 画链接.
-  const link = g
+  const link: d3.Selection<
+    d3.BaseType | SVGPathElement,
+    unknown,
+    SVGGElement,
+    unknown
+  > = g
     .append("g")
     .attr("stroke", "#999")
-    .attr("stroke-opacity", 0.6)
+    .attr("stroke-opacity", 0.5)
     .attr("marker-end", "url(#direction)")
     .selectAll("path")
     .data(links)
     .join("path")
     //@ts-ignore 忽略类型检查
-    .attr("stroke-width", () => Math.sqrt(5))
+    .attr("stroke-width", 2)
+    .attr("fill", "transparent")
     //@ts-ignore 忽略类型检查
     .attr(
       "id",
@@ -166,7 +167,12 @@ const renderGraph = () => {
     );
 
   //画节点
-  const node = g
+  const node: d3.Selection<
+    d3.BaseType | SVGCircleElement,
+    unknown,
+    SVGGElement,
+    unknown
+  > = g
     .append("g")
     .selectAll("circle")
     .data(nodes)
@@ -190,7 +196,12 @@ const renderGraph = () => {
   node.append("title").text(d => d.name);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
-  const linkNameText = g
+  const linkNameText: d3.Selection<
+    SVGTextPathElement,
+    unknown,
+    SVGGElement,
+    unknown
+  > = g
     .append("g")
     .selectAll("text")
     .data(links)
@@ -209,7 +220,12 @@ const renderGraph = () => {
     //@ts-ignore 忽略类型检查
     .text(d => d.relationship);
 
-  const nodeNameText = g
+  const nodeNameText: d3.Selection<
+    d3.BaseType | SVGTextElement,
+    unknown,
+    SVGGElement,
+    unknown
+  > = g
     .append("g")
     .selectAll("text")
     .data(nodes)
@@ -234,22 +250,31 @@ const renderGraph = () => {
   node.call(drag(simulation, g));
   //为导向图添加Tick事件
   function linksTick() {
-    link.attr(
-      "d",
-      d =>
-        "M " +
-        //@ts-ignore 忽略类型检查
+    link.attr("d", d => {
+      //@ts-ignore
+      const dx = d.target.x - d.source.x,
+        //@ts-ignore
+        dy = d.target.y - d.source.y,
+        dr = Math.sqrt(dx * dx + dy * dy);
+      return (
+        "M" +
+        //@ts-ignore
         d.source.x +
-        " " +
-        //@ts-ignore 忽略类型检查
+        "," +
+        //@ts-ignore
         d.source.y +
-        " L " +
-        //@ts-ignore 忽略类型检查
+        "A" +
+        dr +
+        "," +
+        dr +
+        " 0 0,1 " +
+        //@ts-ignore
         d.target.x +
-        " " +
-        //@ts-ignore 忽略类型检查
+        "," +
+        //@ts-ignore
         d.target.y
-    );
+      );
+    });
     //@ts-ignore 忽略类型检查
     node.attr("cx", d => d.x).attr("cy", d => d.y);
     //@ts-ignore 忽略类型检查
@@ -262,10 +287,10 @@ const renderGraph = () => {
   return svg.node();
 };
 
-const drag = (
+const drag: (
   simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>,
   g: d3.Selection<SVGGElement, unknown, HTMLElement, any>
-) => {
+) => d3.DragBehavior<Element, unknown, unknown> = (simulation, g) => {
   // Reheat the simulation when drag starts, and fix the subject position.
   function dragstarted(event: {
     active: any;
@@ -297,9 +322,11 @@ const drag = (
     .on("drag", dragged)
     .on("end", dragended);
 };
-const clearGraph = () => {
+
+const clearGraph: () => void = () => {
   d3.select("#d3-svg").remove();
 };
+
 const eventControl: (name: string) => void = name => {
   console.log(name);
   if (name === "reset") {
@@ -313,7 +340,8 @@ const eventControl: (name: string) => void = name => {
     useControlD3StoreHook().updateShowValue();
   }
 };
-async function tagSelect(value: string) {
+
+const tagSelect: (value: string) => Promise<void> = async value => {
   relationTag.value = value;
   if (useControlD3StoreHook().hasData) useControlD3StoreHook().updateHasData();
   await getDatasByRelation({ relations: value }).then(result => {
@@ -330,8 +358,9 @@ async function tagSelect(value: string) {
       init();
     }
   });
-}
-async function getNodeInfo(e: any, d: any) {
+};
+
+const getNodeInfo: (e: any, d: any) => Promise<void> = async (e, d) => {
   //需要优化，查节点应该由后端做
   await getDatasByName({ name: d.name }).then(result => {
     if (result.success) {
@@ -345,13 +374,15 @@ async function getNodeInfo(e: any, d: any) {
       } else {
         linkInfo.value = result.data.kgDatas.links;
       }
-      nodecolor.value = "" + color(nodeInfo.value.group);
+      //@ts-ignore
+      nodecolor.value = color(nodeInfo.value.group);
       if (!useControlD3StoreHook().hasData)
         useControlD3StoreHook().updateHasData();
     }
   });
-}
-async function searchNodes(value: string) {
+};
+
+const searchNodes: (value: string) => Promise<void> = async value => {
   await getDatasByName({ name: value }).then(result => {
     if (result.success) {
       data = result.data.kgDatas;
@@ -359,7 +390,8 @@ async function searchNodes(value: string) {
       nodes = data.nodes;
       nodeInfo.value = nodes.find(item => item.name === value);
       //links为引用类型，并且是响应式数据，由于被init污染，需要深拷贝
-      linkInfo.value = deepClone(links);
+      linkInfo.value = cloneDeep(links);
+      //@ts-ignore
       nodecolor.value = color(nodeInfo.value.group);
       //需要后端优化——返回erro捕捉catch回调
 
@@ -375,9 +407,9 @@ async function searchNodes(value: string) {
       init();
     }
   });
-}
+};
 
-async function init() {
+const init: () => Promise<void> = async () => {
   await getAllDatas().then(result => {
     if (result.success) {
       data = result.data.kgDatas;
@@ -388,21 +420,10 @@ async function init() {
       renderGraph();
     }
   });
-}
-//深拷贝方法
-function deepClone(obj) {
-  const target = {};
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      if (typeof obj[key] === "object") {
-        target[key] = deepClone(obj[key]);
-      } else {
-        target[key] = obj[key];
-      }
-    }
-  }
-  return target;
-}
+};
+//需要注意的bug：
+//如何解决tag和search的关联和冲突？
+//search时要不要考虑tag的影响？
 
 //vue API 区
 // watch(

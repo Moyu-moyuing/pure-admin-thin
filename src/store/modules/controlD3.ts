@@ -11,7 +11,8 @@ export const useControlD3Store = defineStore({
   state: () => ({
     control: "",
     showSearch: false,
-    hasData: false
+    hasData: false,
+    relationTag: ""
   }),
   actions: {
     updateControl(newvalue: string): void {
@@ -22,6 +23,9 @@ export const useControlD3Store = defineStore({
     },
     updateHasData() {
       this.hasData = !this.hasData;
+    },
+    updateRelationTag(newvalue: string): void {
+      this.relationTag = newvalue;
     }
   }
 });

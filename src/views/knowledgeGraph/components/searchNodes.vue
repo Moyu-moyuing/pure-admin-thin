@@ -9,7 +9,7 @@ defineOptions({
 });
 
 const wordData: Ref<string> = ref("");
-const inputRef = ref<HTMLInputElement | null>(null);
+const inputRef: Ref<HTMLInputElement> = ref<HTMLInputElement | null>(null);
 const emit = defineEmits<{
   (e: "searchNodes", value: string): void;
 }>();

@@ -7,7 +7,8 @@
 <script setup lang="ts">
 // import { ref } from "vue";
 import { useControlD3StoreHook } from "@/store/modules/controlD3";
-import { ButtonProps } from "element-plus";
+// import { ButtonProps } from "element-plus";
+import { randomColor } from "@pureadmin/utils";
 
 defineOptions({
   name: "NodePanel"
@@ -21,17 +22,17 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "tagSelect", value: string): void;
 }>();
-const type: Array<ButtonProps["type"]> = [
-  "primary",
-  "success",
-  "danger",
-  "warning",
-  "info",
-  ""
-];
-const tagType: (index: number) => ButtonProps["type"] = index => {
-  return type[index % 4];
-};
+// const type: Array<ButtonProps["type"]> = [
+//   "primary",
+//   "success",
+//   "danger",
+//   "warning",
+//   "info",
+//   ""
+// ];
+// const tagType: (index: number) => ButtonProps["type"] = index => {
+//   return type[index % 4];
+// };
 const tagSelect: (item: string) => void = item => {
   emit("tagSelect", item);
 };
@@ -83,7 +84,8 @@ const tagSelect: (item: string) => void = item => {
           v-for="(item, index) in props.allLinks"
           :key="index"
           round
-          :type="tagType(index)"
+          :color="//使用断言处理ts报错，解决联合类型不匹配问题
+          randomColor({ type: 'hex' }) as string"
           @click="tagSelect(item)"
         >
           {{ item }}
