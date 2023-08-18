@@ -8,7 +8,7 @@
 // import { ref } from "vue";
 import { useControlD3StoreHook } from "@/store/modules/controlD3";
 // import { ButtonProps } from "element-plus";
-import { randomColor } from "@pureadmin/utils";
+// import { randomColor } from "@pureadmin/utils";
 
 defineOptions({
   name: "NodePanel"
@@ -18,6 +18,7 @@ const props = defineProps<{
   links: any;
   color: any;
   allLinks: any;
+  loading: any;
 }>();
 const emit = defineEmits<{
   (e: "tagSelect", value: string): void;
@@ -41,6 +42,7 @@ const tagSelect: (item: string) => void = item => {
 <template>
   <el-tabs
     :stretch="true"
+    v-loading="loading"
     class="shadow-[0_4px_6px_-1px_rgb(128,128,128)] overflow-auto text-black dark:text-white bg-white dark:bg-black"
   >
     <el-tab-pane label="基本数据信息">
@@ -83,9 +85,9 @@ const tagSelect: (item: string) => void = item => {
         <el-button
           v-for="(item, index) in props.allLinks"
           :key="index"
-          round
-          :color="//使用断言处理ts报错，解决联合类型不匹配问题
-          randomColor({ type: 'hex' }) as string"
+          type="primary"
+          plain
+          size="small"
           @click="tagSelect(item)"
         >
           {{ item }}
@@ -94,7 +96,7 @@ const tagSelect: (item: string) => void = item => {
     </el-tab-pane>
     <el-tab-pane label="关系信息">
       <el-empty
-        v-if="!useControlD3StoreHook().hasData"
+        v-if="!useControlD3StoreHook().hasData || props.links.length === 0"
         description="暂无数据"
       />
       <div v-for="(item, index) in props.links" :key="index">
@@ -143,4 +145,6 @@ const tagSelect: (item: string) => void = item => {
     margin: 25px;
   }
 }
+// :color="//使用断言处理ts报错，解决联合类型不匹配问题
+//           randomColor({ type: 'hex' }) as string"
 </style>

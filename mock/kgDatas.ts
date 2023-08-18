@@ -9,7 +9,8 @@ const list = {
   nodes: [
     { name: "李寻欢", type: "人物", group: 1 },
     { name: "林夫人", type: "人物", group: 2 },
-    { name: "龙霸天", type: "人物", group: 3 }
+    { name: "龙霸天", type: "人物", group: 3 },
+    { name: "百晓生", type: "人物", group: 4 }
   ],
   links: [
     { source: "李寻欢", target: "林夫人", relationship: "爱慕" },
@@ -43,18 +44,25 @@ export default [
       if (!list.nodes.find(item => item.name === query.name)) {
         return { success: false, data: {} };
       } else {
-        const newLinks = list.links.filter(
+        let newLinks = list.links.filter(
           object => object.source === query.name || object.target === query.name
         );
-        const newNodes = list.nodes.filter(object => {
-          if (
-            list.links.find(
-              item => item.source === object.name || item.target === object.name
-            )
-          ) {
-            return true;
-          } else return false;
-        });
+        let newNodes;
+        if (newLinks.length != 0) {
+          newNodes = list.nodes.filter(object => {
+            if (
+              list.links.find(
+                item =>
+                  item.source === object.name || item.target === object.name
+              )
+            ) {
+              return true;
+            } else return false;
+          });
+        } else {
+          newNodes = [list.nodes.find(n => n.name === query.name)];
+          newLinks = [];
+        }
         const newList = {
           nodes: newNodes,
           links: newLinks

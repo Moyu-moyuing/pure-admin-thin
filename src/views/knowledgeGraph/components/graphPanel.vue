@@ -20,12 +20,13 @@ import {
   getDatasByName,
   getDatasByRelation
 } from "@/api/kgData";
+import { ElMessage } from "element-plus";
 // import list from "../data/data.js";
 
 defineOptions({
   name: "GraphPanel"
 });
-
+class SearchError extends Error {}
 //数据区
 /**
  * d3相关数据定义
@@ -49,6 +50,8 @@ const linkInfo: Ref<Array<Link>> = ref(null);
 const nodecolor: Ref<string> = ref("");
 const allLinks: Ref<string[]> = ref(null);
 const relationTag: Ref<string> = ref("");
+const loading: Ref<boolean> = ref(true);
+const nodePanelLoading: Ref<boolean> = ref(false);
 
 //函数区
 const initConfig: () => void = () => {
@@ -151,13 +154,14 @@ const renderGraph: () => SVGSVGElement = () => {
   > = g
     .append("g")
     .attr("stroke", "#999")
-    .attr("stroke-opacity", 0.5)
+    .attr("stroke-opacity", 1)
     .attr("marker-end", "url(#direction)")
     .selectAll("path")
     .data(links)
     .join("path")
     //@ts-ignore 忽略类型检查
     .attr("stroke-width", 2)
+    .attr("stroke-opacity", 0.5)
     .attr("fill", "transparent")
     //@ts-ignore 忽略类型检查
     .attr(
@@ -184,12 +188,10 @@ const renderGraph: () => SVGSVGElement = () => {
     //@ts-ignore 忽略类型检查.
     .attr("stroke", d => color(d.group) + "60")
     .attr("stroke-width", 5)
-    .on("mouseover", e => {
-      d3.select(e.target).transition().attr("stroke-width", 15);
-    })
-    .on("mouseout", e => {
-      d3.select(e.target).transition().attr("stroke-width", 5);
-    })
+    //@ts-ignore 忽略类型检查.
+    .attr("id", d => d.name)
+    .on("mouseover", mouseOver)
+    .on("mouseout", mouseOut)
     .on("click", getNodeInfo);
 
   //@ts-ignore 忽略类型检查
@@ -215,6 +217,10 @@ const renderGraph: () => SVGSVGElement = () => {
       "xlink:href",
       //@ts-ignore 忽略类型检查
       d => "#" + d.source.name + "_" + d.relationship + "_" + d.target.name
+    )
+    .attr(
+      "id", //@ts-ignore 忽略类型检查
+      d => "text_" + d.source.name + "_" + d.relationship + "_" + d.target.name
     )
     .attr("startOffset", "50%")
     //@ts-ignore 忽略类型检查
@@ -242,10 +248,10 @@ const renderGraph: () => SVGSVGElement = () => {
     .attr(
       "font-family",
       "-apple-system, system-ui, avenir, helvetica, roboto, noto, arial"
-    )
+    ) //@ts-ignore 忽略类型检查
+    .attr("id", d => "text_" + d.name)
     //@ts-ignore 忽略类型检查
     .text(d => d.name);
-
   // Add a drag behavior.
   node.call(drag(simulation, g));
   //为导向图添加Tick事件
@@ -284,7 +290,73 @@ const renderGraph: () => SVGSVGElement = () => {
   //生成节点数据
   // Create a simulation with several forces.
   // Set the position attributes of links and nodes each time the simulation ticks.
+  function mouseOver(d) {
+    hideAllLight();
+    // 移除当前节点的蒙版效果，并为其添加高亮
+    d3.select(d.target).transition().attr("stroke-width", 15);
+    const connectedNodes = new Set(); // 用来存储与当前节点连接的所有节点的名称
+    // 找到与当前节点连接的连线，并为它们及其相应的节点移除蒙版效果
+
+    links.forEach(l => {
+      if (d.target.id === l.source.name || d.target.id === l.target.name) {
+        d3.select(
+          "#" + l.source.name + "_" + l.relationship + "_" + l.target.name
+        ).attr("opacity", 1);
+        d3.select(
+          "#" +
+            "text_" +
+            l.source.name +
+            "_" +
+            l.relationship +
+            "_" +
+            l.target.name
+        ).style("opacity", 1);
+
+        connectedNodes.add(l.source.name);
+        connectedNodes.add(l.target.name);
+      }
+    });
+    // 确保当前鼠标悬停的节点也包含在内
+    connectedNodes.add(d.target.id);
+    connectedNodes.forEach(name => {
+      d3.select("#" + name).attr("opacity", 1);
+      d3.select("#" + "text_" + name).style("opacity", 1);
+    });
+  }
+  function mouseOut(d) {
+    d3.select(d.target).transition().attr("stroke-width", 5);
+    resetAllOpacity();
+  }
   return svg.node();
+};
+
+const resetAllOpacity = () => {
+  d3.selectAll("circle").attr("opacity", 1);
+  links.forEach(l => {
+    d3.selectAll(
+      "#" + l.source.name + "_" + l.relationship + "_" + l.target.name
+    ).attr("opacity", 1);
+    d3.selectAll(
+      "#" + "text_" + l.source.name + "_" + l.relationship + "_" + l.target.name
+    ).style("opacity", 1);
+  });
+  nodes.forEach(n => {
+    d3.selectAll("#" + "text_" + n.name).style("opacity", 1);
+  });
+};
+const hideAllLight = () => {
+  d3.selectAll("circle").attr("opacity", 0.08);
+  links.forEach(l => {
+    d3.selectAll(
+      "#" + l.source.name + "_" + l.relationship + "_" + l.target.name
+    ).attr("opacity", 0.03);
+    d3.selectAll(
+      "#" + "text_" + l.source.name + "_" + l.relationship + "_" + l.target.name
+    ).style("opacity", 0.03);
+  });
+  nodes.forEach(n => {
+    d3.selectAll("#" + "text_" + n.name).style("opacity", 0.03);
+  });
 };
 
 const drag: (
@@ -342,84 +414,147 @@ const eventControl: (name: string) => void = name => {
 };
 
 const tagSelect: (value: string) => Promise<void> = async value => {
+  loading.value = true;
   relationTag.value = value;
   if (useControlD3StoreHook().hasData) useControlD3StoreHook().updateHasData();
-  await getDatasByRelation({ relations: value }).then(result => {
-    if (result.success) {
-      data = result.data.kgDatas;
-      links = data.links;
-      nodes = data.nodes;
-      clearGraph();
-      initConfig();
-      renderGraph();
-    } else {
-      clearGraph();
-      scale.value = 1;
-      init();
-    }
-  });
+  await getDatasByRelation({ relations: value })
+    .then(result => {
+      if (result.success) {
+        data = result.data.kgDatas;
+        links = data.links;
+        nodes = data.nodes;
+        clearGraph();
+        initConfig();
+        renderGraph();
+      } else {
+        throw new SearchError("无结果");
+      }
+    })
+    .then(() => {
+      ElMessage({
+        message: "查找成功",
+        type: "success"
+      });
+    })
+    .catch(error => {
+      if (error instanceof SearchError) {
+        ElMessage({
+          message: "查找失败," + error.message + ",即将自动初始化",
+          type: "error"
+        });
+        clearGraph();
+        scale.value = 1;
+        init();
+      } else {
+        ElMessage.error("查找失败", error.message);
+      }
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 };
 
 const getNodeInfo: (e: any, d: any) => Promise<void> = async (e, d) => {
+  nodePanelLoading.value = true;
   //需要优化，查节点应该由后端做
-  await getDatasByName({ name: d.name }).then(result => {
-    if (result.success) {
-      nodeInfo.value = result.data.kgDatas.nodes.find(
-        item => item.name === d.name
-      );
-      if (relationTag.value != "") {
-        linkInfo.value = result.data.kgDatas.links.filter(
-          item => item.relationship === relationTag.value
+  await getDatasByName({ name: d.name })
+    .then(result => {
+      if (result.success) {
+        nodeInfo.value = result.data.kgDatas.nodes.find(
+          item => item.name === d.name
         );
-      } else {
-        linkInfo.value = result.data.kgDatas.links;
+        if (relationTag.value != "") {
+          linkInfo.value = result.data.kgDatas.links.filter(
+            item => item.relationship === relationTag.value
+          );
+        } else {
+          linkInfo.value = result.data.kgDatas.links;
+        }
+        //@ts-ignore
+        nodecolor.value = color(nodeInfo.value.group);
+        if (!useControlD3StoreHook().hasData)
+          useControlD3StoreHook().updateHasData();
       }
-      //@ts-ignore
-      nodecolor.value = color(nodeInfo.value.group);
-      if (!useControlD3StoreHook().hasData)
-        useControlD3StoreHook().updateHasData();
-    }
-  });
+    })
+    .then(() => {
+      nodePanelLoading.value = false;
+    });
 };
 
 const searchNodes: (value: string) => Promise<void> = async value => {
-  await getDatasByName({ name: value }).then(result => {
-    if (result.success) {
-      data = result.data.kgDatas;
-      links = data.links;
-      nodes = data.nodes;
-      nodeInfo.value = nodes.find(item => item.name === value);
-      //links为引用类型，并且是响应式数据，由于被init污染，需要深拷贝
-      linkInfo.value = cloneDeep(links);
-      //@ts-ignore
-      nodecolor.value = color(nodeInfo.value.group);
-      //需要后端优化——返回erro捕捉catch回调
+  loading.value = true;
+  await getDatasByName({ name: value })
+    .then(result => {
+      if (result.success) {
+        data = result.data.kgDatas;
+        links = data.links;
+        nodes = data.nodes;
+        nodeInfo.value = nodes.find(item => item.name === value);
+        //links为引用类型，并且是响应式数据，由于被init污染，需要深拷贝
+        linkInfo.value = cloneDeep(links);
+        //@ts-ignore
+        nodecolor.value = color(nodeInfo.value.group);
+        //需要后端优化——返回erro捕捉catch回调
 
-      clearGraph();
-      initConfig();
-      renderGraph();
+        clearGraph();
+        initConfig();
+        renderGraph();
 
-      if (!useControlD3StoreHook().hasData)
-        useControlD3StoreHook().updateHasData();
-    } else {
-      clearGraph();
-      scale.value = 1;
-      init();
-    }
-  });
+        if (!useControlD3StoreHook().hasData)
+          useControlD3StoreHook().updateHasData();
+      } else {
+        throw new SearchError("无结果");
+      }
+    })
+    .then(() => {
+      ElMessage({
+        message: "查找成功",
+        type: "success"
+      });
+    })
+    .catch(error => {
+      if (error instanceof SearchError) {
+        ElMessage({
+          message: "查找失败," + error.message + ",即将自动初始化",
+          type: "error"
+        });
+        clearGraph();
+        scale.value = 1;
+        init();
+      } else {
+        ElMessage.error("查找失败,", error.message);
+      }
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 };
 
 const init: () => Promise<void> = async () => {
-  await getAllDatas().then(result => {
-    if (result.success) {
-      data = result.data.kgDatas;
-      links = data.links;
-      nodes = data.nodes;
-      allLinks.value = result.data.relations;
-      initConfig();
-      renderGraph();
-    }
-  });
+  loading.value = true;
+  await getAllDatas()
+    .then(result => {
+      if (result.success) {
+        data = result.data.kgDatas;
+        links = data.links;
+        nodes = data.nodes;
+        allLinks.value = result.data.relations;
+        initConfig();
+        renderGraph();
+      }
+    })
+    .then(() => {
+      ElMessage({
+        message: "初始化成功",
+        type: "success"
+      });
+    })
+    .catch(error => {
+      ElMessage.error("初始化失败", error.message);
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 };
 //需要注意的bug：
 //如何解决tag和search的关联和冲突？
@@ -451,11 +586,11 @@ onMounted(() => {
         <span class="font-center text-xl">知识图谱可视化 </span>
       </div>
     </template>
-    <div class="relative m-2.5">
+    <div class="relative m-2.5" v-loading="loading">
       <!-- 画布 -->
       <div
         id="force-container"
-        class="w-full h-full relative z-0 bg-white/[.03]"
+        class="w-screen h-screen relative z-0 bg-white/[.03]"
       >
         <div
           id="force-grid"
@@ -503,8 +638,9 @@ onMounted(() => {
         :links="linkInfo"
         :color="nodecolor"
         :all-links="allLinks"
+        :loading="nodePanelLoading"
         @tag-select="tagSelect"
-        class="absolute top-3 right-3 z-[101] w-1/5 h-[96%] text-center rounded-md opacity-90"
+        class="absolute top-3 right-3 z-[101] w-60 h-[80%] text-center rounded-md opacity-90"
       />
     </div>
     <SearchNodes @search-nodes="searchNodes" />
