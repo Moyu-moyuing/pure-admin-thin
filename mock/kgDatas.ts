@@ -7,10 +7,10 @@
 import { MockMethod } from "vite-plugin-mock";
 const list = {
   nodes: [
-    { name: "李寻欢", type: "人物", group: 1 },
-    { name: "林夫人", type: "人物", group: 2 },
-    { name: "龙霸天", type: "人物", group: 3 },
-    { name: "百晓生", type: "人物", group: 4 }
+    { name: "李寻欢", type: "人物" },
+    { name: "林夫人", type: "人" },
+    { name: "龙霸天", type: "物" },
+    { name: "百晓生", type: "物人" }
   ],
   links: [
     { source: "李寻欢", target: "林夫人", relationship: "爱慕" },
@@ -32,7 +32,8 @@ export default [
           kgDatas: list,
           nodeLength: list.nodes.length,
           linkLength: list.links.length,
-          relations: list.relations
+          relations: list.relations,
+          tags: [...new Set(list.nodes.map(node => node.type))]
         }
       };
     }

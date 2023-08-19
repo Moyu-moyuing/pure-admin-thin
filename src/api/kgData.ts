@@ -3,7 +3,6 @@ import { http } from "@/utils/http";
 export type Node = {
   name: string;
   type: string;
-  group: number;
 };
 export type Link = {
   source: string;
@@ -25,6 +24,8 @@ export type allKgDataResult = {
     linkLength: number;
     /** 关系 */
     relations: Array<string>;
+    /** 标签 */
+    tags: string[];
   };
 };
 export type KgDataResult = {
