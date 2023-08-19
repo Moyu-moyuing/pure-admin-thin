@@ -52,6 +52,7 @@ const allLinks: Ref<string[]> = ref(null);
 const relationTag: Ref<string> = ref("");
 const loading: Ref<boolean> = ref(true);
 const nodePanelLoading: Ref<boolean> = ref(false);
+const tags = ref(null);
 
 //函数区
 const initConfig: () => void = () => {
@@ -127,6 +128,10 @@ const renderGraph: () => SVGSVGElement = () => {
   //缩放事件
   zoom.on("zoom", () => {
     const transform = d3.zoomTransform(svg.node());
+    // 创建一个过渡
+    // g.transition()
+    //   .duration(30) // 设置过渡的持续时间
+    //   .ease(d3.easeCubic) // 设置缓动函数
     //@ts-ignore
     g.attr("transform", transform);
     //响应式使得网格也缩放
@@ -184,9 +189,9 @@ const renderGraph: () => SVGSVGElement = () => {
     .attr("r", 30)
     .attr("opacity", 1)
     //@ts-ignore 忽略类型检查.
-    .attr("fill", d => color(d.group))
+    .attr("fill", d => color(d.type))
     //@ts-ignore 忽略类型检查.
-    .attr("stroke", d => color(d.group) + "60")
+    .attr("stroke", d => color(d.type) + "60")
     .attr("stroke-width", 5)
     //@ts-ignore 忽略类型检查.
     .attr("id", d => d.name)
@@ -471,7 +476,7 @@ const getNodeInfo: (e: any, d: any) => Promise<void> = async (e, d) => {
           linkInfo.value = result.data.kgDatas.links;
         }
         //@ts-ignore
-        nodecolor.value = color(nodeInfo.value.group);
+        nodecolor.value = color(nodeInfo.value.type);
         if (!useControlD3StoreHook().hasData)
           useControlD3StoreHook().updateHasData();
       }
@@ -493,7 +498,7 @@ const searchNodes: (value: string) => Promise<void> = async value => {
         //links为引用类型，并且是响应式数据，由于被init污染，需要深拷贝
         linkInfo.value = cloneDeep(links);
         //@ts-ignore
-        nodecolor.value = color(nodeInfo.value.group);
+        nodecolor.value = color(nodeInfo.value.type);
         //需要后端优化——返回erro捕捉catch回调
 
         clearGraph();
@@ -538,6 +543,7 @@ const init: () => Promise<void> = async () => {
         data = result.data.kgDatas;
         links = data.links;
         nodes = data.nodes;
+        tags.value = result.data.tags;
         allLinks.value = result.data.relations;
         initConfig();
         renderGraph();
@@ -579,70 +585,81 @@ onMounted(() => {
 
 <template>
   <!-- <div>力导向图面板</div> -->
-
-  <el-card shadow="never">
-    <template #header>
-      <div class="text-center">
-        <span class="font-center text-xl">知识图谱可视化 </span>
-      </div>
-    </template>
-    <div class="relative m-2.5" v-loading="loading">
-      <!-- 画布 -->
-      <div
-        id="force-container"
-        class="w-screen h-screen relative z-0 bg-white/[.03]"
-      >
-        <div
-          id="force-grid"
-          class="w-full h-full bottom-0 left-0 right-0 top-0 absolute -z-[1]"
-        >
-          <!--这里用tailwindcss加载不出网格？只能用内联样式-->
-          <svg
-            width="100%"
-            height="100%"
-            xmlns="http://www.w3.org/2000/svg"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            version="1.1"
+  <div>
+    <el-card shadow="never">
+      <template #header>
+        <div class="flex items-center justify-center flex-wrap gap-2">
+          <div
+            v-for="tag in tags"
+            :key="tag"
+            class="flex items-center justify-center"
           >
-            <defs>
-              <pattern
-                id="dots"
-                patternUnits="userSpaceOnUse"
-                :patternTransform="`scale(${scale},${scale})`"
-                x="0"
-                y="0"
-                width="20"
-                height="20"
-              >
-                <rect
-                  width="2"
-                  height="2"
-                  rx="1"
-                  ry="1"
-                  class="fill-gray-400 opacity-100"
-                />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#dots)" />
-          </svg>
+            <span
+              class="mx-1 w-8 h-5 rounded"
+              :style="{ background: color(tag) }"
+            />
+            {{ tag }}
+          </div>
         </div>
+      </template>
+      <div class="relative m-2.5" v-loading="loading">
+        <!-- 画布 -->
+        <div
+          id="force-container"
+          class="w-screen h-screen relative z-0 bg-white/[.03]"
+        >
+          <div
+            id="force-grid"
+            class="w-full h-full bottom-0 left-0 right-0 top-0 absolute -z-[1]"
+          >
+            <!--这里用tailwindcss加载不出网格？只能用内联样式-->
+            <svg
+              width="100%"
+              height="100%"
+              xmlns="http://www.w3.org/2000/svg"
+              xmlns:xlink="http://www.w3.org/1999/xlink"
+              version="1.1"
+            >
+              <defs>
+                <pattern
+                  id="dots"
+                  patternUnits="userSpaceOnUse"
+                  :patternTransform="`scale(${scale},${scale})`"
+                  x="0"
+                  y="0"
+                  width="20"
+                  height="20"
+                >
+                  <rect
+                    width="2"
+                    height="2"
+                    rx="1"
+                    ry="1"
+                    class="fill-gray-400 opacity-100"
+                  />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#dots)" />
+            </svg>
+          </div>
+        </div>
+        <!-- 辅助工具栏 -->
+        <Control
+          class="absolute top-3 left-3 z-[101] rounded-md opacity-90"
+          @eventControl="eventControl"
+        />
+        <!-- 节点信息面板 -->
+        <NodePanel
+          :node="nodeInfo"
+          :links="linkInfo"
+          :color="nodecolor"
+          :all-links="allLinks"
+          :loading="nodePanelLoading"
+          @tag-select="tagSelect"
+          class="absolute top-3 right-3 z-[101] w-60 h-[80%] text-center rounded-md opacity-90"
+        />
       </div>
-      <!-- 辅助工具栏 -->
-      <Control
-        class="absolute top-3 left-3 z-[101] rounded-md opacity-90"
-        @eventControl="eventControl"
-      />
-      <!-- 节点信息面板 -->
-      <NodePanel
-        :node="nodeInfo"
-        :links="linkInfo"
-        :color="nodecolor"
-        :all-links="allLinks"
-        :loading="nodePanelLoading"
-        @tag-select="tagSelect"
-        class="absolute top-3 right-3 z-[101] w-60 h-[80%] text-center rounded-md opacity-90"
-      />
-    </div>
-    <SearchNodes @search-nodes="searchNodes" />
-  </el-card>
+      <SearchNodes @search-nodes="searchNodes" />
+    </el-card>
+  </div>
 </template>
