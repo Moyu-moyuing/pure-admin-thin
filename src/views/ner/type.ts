@@ -84,6 +84,78 @@ export const testTokens: Token[] = [
   },
   {
     text: "合作多年。"
+  },
+  {
+    text: "马云",
+    entity: {
+      id: "e7",
+      text: "马云",
+      type: "人物"
+    }
+  },
+  {
+    text: "是"
+  },
+  {
+    text: "阿里巴巴",
+    entity: {
+      id: "e8",
+      text: "阿里巴巴",
+      type: "公司"
+    }
+  },
+  {
+    text: "的创始人。"
+  },
+  {
+    text: "他与"
+  },
+  {
+    text: "张勇",
+    entity: {
+      id: "e9",
+      text: "张勇",
+      type: "人物"
+    }
+  },
+  {
+    text: "合作多年。"
+  },
+  {
+    text: "马云",
+    entity: {
+      id: "e10",
+      text: "马云",
+      type: "人物"
+    }
+  },
+  {
+    text: "是"
+  },
+  {
+    text: "阿里巴巴",
+    entity: {
+      id: "e11",
+      text: "阿里巴巴",
+      type: "公司"
+    }
+  },
+  {
+    text: "的创始人。"
+  },
+  {
+    text: "他与"
+  },
+  {
+    text: "张勇",
+    entity: {
+      id: "e12",
+      text: "张勇",
+      type: "人物"
+    }
+  },
+  {
+    text: "合作多年。"
   }
 ];
 
@@ -105,7 +177,27 @@ export const testRelationships: Relationship[] = [
   },
   {
     sourceEntityId: "e6",
-    targetEntityId: "e4",
+    targetEntityId: "e10",
+    type: "合作"
+  },
+  {
+    sourceEntityId: "e7",
+    targetEntityId: "e8",
+    type: "创始人"
+  },
+  {
+    sourceEntityId: "e9",
+    targetEntityId: "e7",
+    type: "合作"
+  },
+  {
+    sourceEntityId: "e10",
+    targetEntityId: "e11",
+    type: "创始人"
+  },
+  {
+    sourceEntityId: "e12",
+    targetEntityId: "e7",
     type: "合作"
   }
 ];
