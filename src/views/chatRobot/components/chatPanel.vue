@@ -35,6 +35,9 @@ const activeId = ref(null);
 const handleClickSession = sessionId => {
   activeId.value = sessionId;
 };
+const handleDeleteSession = session => {
+  console.log(session);
+};
 </script>
 
 <template>
@@ -52,7 +55,7 @@ const handleClickSession = sessionId => {
             :active="id === activeId"
             :session="session"
             @click="handleClickSession(id)"
-            @delete="session => console.log(session)"
+            @delete="handleDeleteSession(session)"
           />
         </template>
       </div>
