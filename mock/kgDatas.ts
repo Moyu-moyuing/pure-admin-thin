@@ -16,7 +16,9 @@ const list = {
     { source: "李寻欢", target: "林夫人", relationship: "爱慕" },
     { source: "林夫人", target: "龙霸天", relationship: "爱慕" },
     { source: "李寻欢", target: "龙霸天", relationship: "结义" },
-    { source: "龙霸天", target: "李寻欢", relationship: "结义" }
+    { source: "龙霸天", target: "李寻欢", relationship: "结义" },
+    { source: "百晓生", target: "百晓生", relationship: "了解" },
+    { source: "百晓生", target: "百晓生", relationship: "恩爱" }
   ],
   relations: ["爱慕", "结义"]
 };
