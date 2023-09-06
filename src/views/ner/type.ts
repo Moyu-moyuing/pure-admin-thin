@@ -14,10 +14,10 @@ export interface Relationship {
 }
 export const testTokens: Token[] = [
   {
-    text: "马云",
+    text: "马化腾",
     entity: {
       id: "e1",
-      text: "马云",
+      text: "马化腾",
       type: "人物"
     }
   },
@@ -25,10 +25,10 @@ export const testTokens: Token[] = [
     text: "是"
   },
   {
-    text: "阿里巴巴",
+    text: "腾讯",
     entity: {
       id: "e2",
-      text: "阿里巴巴",
+      text: "腾讯",
       type: "公司"
     }
   },
@@ -39,10 +39,10 @@ export const testTokens: Token[] = [
     text: "他与"
   },
   {
-    text: "张勇",
+    text: "张小龙",
     entity: {
       id: "e3",
-      text: "张勇",
+      text: "张小龙",
       type: "人物"
     }
   },
@@ -50,10 +50,10 @@ export const testTokens: Token[] = [
     text: "合作多年。"
   },
   {
-    text: "马云",
+    text: "马化腾",
     entity: {
       id: "e4",
-      text: "马云",
+      text: "马化腾",
       type: "人物"
     }
   },
@@ -61,10 +61,10 @@ export const testTokens: Token[] = [
     text: "是"
   },
   {
-    text: "阿里巴巴",
+    text: "腾讯",
     entity: {
       id: "e5",
-      text: "阿里巴巴",
+      text: "腾讯",
       type: "公司"
     }
   },
@@ -75,10 +75,10 @@ export const testTokens: Token[] = [
     text: "他与"
   },
   {
-    text: "张勇",
+    text: "张小龙",
     entity: {
       id: "e6",
-      text: "张勇",
+      text: "张小龙",
       type: "人物"
     }
   },
@@ -86,10 +86,10 @@ export const testTokens: Token[] = [
     text: "合作多年。"
   },
   {
-    text: "马云",
+    text: "马化腾",
     entity: {
       id: "e7",
-      text: "马云",
+      text: "马化腾",
       type: "人物"
     }
   },
@@ -97,10 +97,10 @@ export const testTokens: Token[] = [
     text: "是"
   },
   {
-    text: "阿里巴巴",
+    text: "腾讯",
     entity: {
       id: "e8",
-      text: "阿里巴巴",
+      text: "腾讯",
       type: "公司"
     }
   },
@@ -111,10 +111,10 @@ export const testTokens: Token[] = [
     text: "他与"
   },
   {
-    text: "张勇",
+    text: "张小龙",
     entity: {
       id: "e9",
-      text: "张勇",
+      text: "张小龙",
       type: "人物"
     }
   },
@@ -122,10 +122,10 @@ export const testTokens: Token[] = [
     text: "合作多年。"
   },
   {
-    text: "马云",
+    text: "马化腾",
     entity: {
       id: "e10",
-      text: "马云",
+      text: "马化腾",
       type: "人物"
     }
   },
@@ -133,10 +133,10 @@ export const testTokens: Token[] = [
     text: "是"
   },
   {
-    text: "阿里巴巴",
+    text: "腾讯",
     entity: {
       id: "e11",
-      text: "阿里巴巴",
+      text: "腾讯",
       type: "公司"
     }
   },
@@ -147,10 +147,10 @@ export const testTokens: Token[] = [
     text: "他与"
   },
   {
-    text: "张勇",
+    text: "张小龙",
     entity: {
       id: "e12",
-      text: "张勇",
+      text: "张小龙",
       type: "人物"
     }
   },
@@ -201,3 +201,5 @@ export const testRelationships: Relationship[] = [
     type: "合作"
   }
 ];
+export const testEntityType = ["人物", "公司"];
+export const testRelationType = ["创始人", "合作"];

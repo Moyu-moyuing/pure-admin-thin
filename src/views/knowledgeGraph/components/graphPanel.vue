@@ -41,6 +41,9 @@ const color: d3.ScaleOrdinal<string, string, never> = d3.scaleOrdinal(
 );
 const width: number = window.innerWidth;
 const height: number = window.innerHeight;
+// 控制贝塞尔曲线的偏移量，也即“C”的大小
+const BASE_OFFSET = 150;
+
 /**
  * 响应式数据定义
  */
@@ -261,30 +264,63 @@ const renderGraph: () => SVGSVGElement = () => {
   node.call(drag(simulation, g));
   //为导向图添加Tick事件
   function linksTick() {
-    link.attr("d", d => {
-      //@ts-ignore
-      const dx = d.target.x - d.source.x,
+    link.attr("d", (d, i) => {
+      //@ts-ignore 忽略类型检查
+      if (d.source === d.target) {
         //@ts-ignore
-        dy = d.target.y - d.source.y,
-        dr = Math.sqrt(dx * dx + dy * dy);
-      return (
-        "M" +
+        const cx = d.source.x;
         //@ts-ignore
-        d.source.x +
-        "," +
+        const cy = d.source.y;
+
+        // 角度偏移
+        const rotationAngle = (i * Math.PI) / 4; // 根据关系的索引来调整旋转角度
+
+        /**
+         * | x' |   | cos(angle)   -sin(angle)  |   | x - cx |
+         * |    | = |                          | · |        |
+         * | y' |   | sin(angle)   cos(angle) |   | y - cy |
+         * @param x
+         * @param y
+         * @param angle
+         */
+        const rotate = (x, y, angle) => {
+          return {
+            x: cx + (x - cx) * Math.cos(angle) - (y - cy) * Math.sin(angle),
+            y: cy + (x - cx) * Math.sin(angle) + (y - cy) * Math.cos(angle)
+          };
+        };
+
+        const cp1 = rotate(cx - BASE_OFFSET, cy - BASE_OFFSET, rotationAngle);
+        const cp2 = rotate(cx + BASE_OFFSET, cy - BASE_OFFSET, rotationAngle);
+
+        // 使用M命令移动到圆心，然后使用C命令绘制一个贝塞尔曲线
+        // 从圆心出发，通过两个控制点，最终返回圆心
+        return `M ${cx},${cy} C ${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${cx},${cy}`;
+      } else {
         //@ts-ignore
-        d.source.y +
-        "A" +
-        dr +
-        "," +
-        dr +
-        " 0 0,1 " +
-        //@ts-ignore
-        d.target.x +
-        "," +
-        //@ts-ignore
-        d.target.y
-      );
+        const dx = d.target.x - d.source.x,
+          //@ts-ignore
+          dy = d.target.y - d.source.y,
+          dr = Math.sqrt(dx * dx + dy * dy);
+        return (
+          "M" +
+          //@ts-ignore
+          d.source.x +
+          "," +
+          //@ts-ignore
+          d.source.y +
+          "A" +
+          dr +
+          "," +
+          dr +
+          " 0 0,1 " +
+          //@ts-ignore
+          d.target.x +
+          "," +
+          //@ts-ignore
+          d.target.y
+        );
+      }
     });
     //@ts-ignore 忽略类型检查
     node.attr("cx", d => d.x).attr("cy", d => d.y);

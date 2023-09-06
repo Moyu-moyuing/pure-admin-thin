@@ -1,7 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick, computed } from "vue";
+import {
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  nextTick,
+  computed,
+  ComputedRef,
+  Ref
+} from "vue";
 import EntityLabel from "./entityLabel.vue";
-import { Token, Relationship, testTokens, testRelationships } from "../type";
+import {
+  Token,
+  Relationship,
+  testTokens,
+  testRelationships,
+  testEntityType
+} from "../type";
 import { debounce } from "@pureadmin/utils";
 // import { debounce } from "@pureadmin/utils";
 defineOptions({
@@ -17,21 +31,52 @@ const badgeWidth = 20;
 const badgeHeight = 20;
 // const OFFSET_STEP = 5; // 偏移量步长，可以根据需要调整
 
-const annotatorContainer = ref<HTMLDivElement | null>(null);
-const annotator = ref<HTMLDivElement | null>(null);
-const svgLayer = ref<SVGSVGElement | null>(null);
+const annotatorContainer: Ref<HTMLDivElement> = ref<HTMLDivElement | null>(
+  null
+);
+const annotator: Ref<HTMLDivElement> = ref<HTMLDivElement | null>(null);
+const svgLayer: Ref<SVGSVGElement> = ref<SVGSVGElement | null>(null);
 
-const tokens = ref<Array<Token>>([]);
-const relationships = ref<Array<Relationship>>([]);
-const svgRelations = ref([]);
-const svgBadges = ref([]);
+const tokens: Ref<
+  {
+    text: string;
+    entity?: {
+      id: string;
+      text: string;
+      type: string;
+    };
+  }[]
+> = ref<Array<Token>>([]);
+const relationships: Ref<
+  {
+    sourceEntityId: string;
+    targetEntityId: string;
+    type: string;
+  }[]
+> = ref<Array<Relationship>>([]);
+const svgRelations: Ref<any[]> = ref([]);
+const svgBadges: Ref<any[]> = ref([]);
+const entityLabel: any = ref(null);
 
-const init = () => {
+const init: () => void = () => {
   tokens.value = testTokens;
   relationships.value = testRelationships;
+  entityLabel.value = testEntityType;
 };
 
-const getEntityPosition = (entityId: string) => {
+const getEntityPosition: (entityId: string) =>
+  | {
+      left: number;
+      top: number;
+      bottom: number;
+      width: number;
+    }
+  | {
+      left: number;
+      top: number;
+      bottom: number;
+      width?: undefined;
+    } = (entityId: string) => {
   const entityElement = annotator.value?.querySelector(`#entity-${entityId}`);
   if (entityElement) {
     const rect = entityElement.getBoundingClientRect();
@@ -46,12 +91,12 @@ const getEntityPosition = (entityId: string) => {
   }
   return { left: 0, top: 0, bottom: 0 };
 };
-const estimateTextLength = text => {
+const estimateTextLength: (text: any) => number = text => {
   // 一个粗略的估计方法：使用每个字符平均的宽度
-  const averageCharWidth = 10; // 假设每个字符的平均宽度为8px
+  const averageCharWidth = 10; // 假设每个字符的平均宽度为10px
   return text.length * averageCharWidth;
 };
-const drawRelationships = () => {
+const drawRelationships: () => void = () => {
   const paths = [];
   // const rowRelationsCounter = {}; //存储每行关系的数量
   const badges = []; //存储标签信息
@@ -141,7 +186,7 @@ const drawRelationships = () => {
   svgBadges.value = badges;
 };
 //增加防抖效果
-const handleWindowResize = debounce(() => {
+const handleWindowResize: () => void = debounce(() => {
   if (window.innerWidth <= 425) {
     //设置一定的浏览器宽度，达到某种条件才重绘
     //大大减少svg重绘的计算
@@ -157,12 +202,12 @@ const handleWindowResize = debounce(() => {
 // };
 
 //固定内容显示长宽，并让svg的宽高随之变化，减少由于重新排布导致的多次svg重绘性能问题
-const svgHeight = computed(() => {
+const svgHeight: ComputedRef<string> = computed(() => {
   if (annotatorContainer.value)
     return annotatorContainer.value.scrollHeight + "px";
   return "100vh";
 });
-const svgWidth = computed(() => {
+const svgWidth: ComputedRef<string> = computed(() => {
   if (annotatorContainer.value)
     return annotatorContainer.value.scrollWidth + "px";
   return "100vh";
@@ -198,8 +243,16 @@ onBeforeUnmount(() => {
   <div>
     <el-card shadow="never">
       <template #header>
-        <div class="text-center">
-          <span class="font-center text-xl">命名实体识别 </span>
+        <div class="flex items-center justify-center flex-wrap gap-2">
+          <div
+            v-for="label in entityLabel"
+            :key="label"
+            class="flex items-center justify-center"
+          >
+            <el-button plain type="primary">
+              {{ label }}
+            </el-button>
+          </div>
         </div>
       </template>
       <div
