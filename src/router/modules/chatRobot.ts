@@ -3,7 +3,7 @@ export default {
   redirect: "/chatRobot/index",
   meta: {
     icon: "robot",
-    title: "聊天机器人",
+    title: "江湖百晓生",
     // showLink: false,
     rank: 1
   },
@@ -13,7 +13,7 @@ export default {
       name: "ChatRobot",
       component: () => import("@/views/chatRobot/index.vue"),
       meta: {
-        title: "聊天机器人"
+        title: "江湖百晓生"
       }
     }
   ]

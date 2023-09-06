@@ -5,11 +5,16 @@
  * @date: 2023-07-24 20:33:10
  -->
 <script setup lang="ts">
+import TextAnnotator from "./components/textAnnotator.vue";
+
 defineOptions({
   name: "NER"
 });
 </script>
 
 <template>
-  <h1>实体命名识别页面，正在开发中......</h1>
+  <div>
+    <h1>实体命名识别页面，正在开发中......</h1>
+    <TextAnnotator />
+  </div>
 </template>
