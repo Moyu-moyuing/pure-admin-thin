@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "NODE_OPTIONS=--max-old-space-size=4096 vite",
+    "deploy": "gh-pages -d dist -m \"chore(deploy): deploy to github pages\"",
     "serve": "pnpm dev",
     "build": "rimraf dist && NODE_OPTIONS=--max-old-space-size=8192 vite build",
     "build:staging": "rimraf dist && vite build --mode staging",
@@ -82,6 +83,7 @@
     "eslint": "^8.43.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-vue": "^9.15.1",
+    "gh-pages": "^6.0.0",
     "husky": "^8.0.3",
     "lint-staged": "^13.2.2",
     "picocolors": "^1.0.0",
