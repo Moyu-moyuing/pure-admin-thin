@@ -126,7 +126,7 @@ const cancelUpdateSessionTitle = () => {
 <style scoped lang="scss">
 .session-title {
   display: inline-block;
-  width: 140px;
+  width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

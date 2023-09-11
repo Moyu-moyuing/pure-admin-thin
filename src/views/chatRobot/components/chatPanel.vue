@@ -94,7 +94,7 @@ onMounted(() => {
     <div class="flex bg-[var(--el-bg-color)]">
       <!--会话列表-->
       <div
-        class="bg-[rgb(32,33,35)] text-white dark:text-black w-[250px] rounded-tl-[var(--el-card-border-radius)] rounded-bl-[var(--el-card-border-radius)] relative border-r-[1px] border-solid border-[rgba(black,0.07)] p-2"
+        class="bg-[rgb(32,33,35)] text-white dark:text-black w-[300px] rounded-tl-[var(--el-card-border-radius)] rounded-bl-[var(--el-card-border-radius)] relative border-r-[1px] border-solid border-[rgba(black,0.07)] p-2"
       >
         <div class="mt-[20px] text-[20px]">江湖百晓生</div>
         <div class="text-[10px] mt-[10px]">介绍信息...</div>
@@ -120,7 +120,7 @@ onMounted(() => {
         </transition-group>
       </div>
       <!--消息面板-->
-      <div class="w-[67vw] h-[800px]">
+      <div class="w-full h-[800px]">
         <!--消息面板头-->
         <div class="pt-5 text-center">
           <div class="text-[rgba(black,0.7)] text-xl">
@@ -141,7 +141,9 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 :deep(.el-card__body) {
+  width: 100%;
   padding: 0%;
+  //集成父类el-card的宽度，防止出现宽度不一样情况
 }
 
 .list-fade-enter-active,
