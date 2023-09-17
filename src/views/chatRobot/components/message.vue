@@ -18,13 +18,15 @@ const emit = defineEmits<{
 }>();
 const typedText = ref("");
 const shouldScrollToBottom = ref(true);
+const stopTypingFlag = ref(false);
+let typingInterval = null;
 // const markdownContent = ref<HTMLElement | null>(null);
 const showTypingEffect = () => {
   typedText.value = "";
   emit("respond", true);
   const messageContent = props.message.content;
   let index = 0;
-  const typingInterval = setInterval(() => {
+  typingInterval = setInterval(() => {
     if (index < messageContent.length) {
       typedText.value += messageContent[index];
       index++;
@@ -33,7 +35,26 @@ const showTypingEffect = () => {
       clearInterval(typingInterval);
       emit("respond", false);
     }
-  }, 100);
+  }, 50);
+};
+
+const toggleTyping = () => {
+  if (props.isTyping) {
+    stopTyping();
+  } else {
+    restartTyping();
+  }
+};
+const stopTyping = () => {
+  clearInterval(typingInterval);
+  emit("respond", false);
+  stopTypingFlag.value = true;
+};
+const restartTyping = () => {
+  stopTyping();
+  stopTypingFlag.value = false;
+  typedText.value = "";
+  showTypingEffect();
 };
 // const typedTextWithCursor = computed(() => {
 //   return `${typedText.value}<span class="cursor">|</span>`;
@@ -70,6 +91,9 @@ onBeforeUnmount(() => {
     props.messagePanelRef.removeEventListener("scroll", handleScroll);
   }
 });
+defineExpose({
+  toggleTyping
+});
 </script>
 
 <template>
@@ -104,9 +128,9 @@ onBeforeUnmount(() => {
             >
               <MdPreview
                 :model-value="
-                  props.message.role === 'user' || !isTyping
-                    ? props.message.content
-                    : typedText
+                  props.message.role !== 'user' && (isTyping || stopTypingFlag)
+                    ? typedText
+                    : props.message.content
                 "
                 theme="light"
                 :previewTheme="'github'"
@@ -122,15 +146,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
-.el-avatar {
-  --el-avatar-bg-color: var(--el-color-primary);
-}
-
-.cursor {
-  display: inline-block;
-  animation: blink 1s step-start infinite;
-}
-
 @keyframes blink {
   0% {
     opacity: 1;
@@ -143,5 +158,15 @@ onBeforeUnmount(() => {
   100% {
     opacity: 1;
   }
+}
+
+.el-avatar {
+  --el-avatar-bg-color: var(--el-color-primary);
+}
+
+//未实现的闪烁的光标效果
+.cursor {
+  display: inline-block;
+  animation: blink 1s step-start infinite;
 }
 </style>

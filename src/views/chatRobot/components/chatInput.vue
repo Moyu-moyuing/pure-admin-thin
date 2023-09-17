@@ -19,10 +19,17 @@ const sendMessage = () => {
 };
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.key === "Enter" && !e.shiftKey) {
+    if (props.respond) return;
     e.preventDefault();
     sendMessage();
   }
 };
+const clearInput = () => {
+  message.value = "";
+};
+defineExpose({
+  clearInput
+});
 </script>
 
 <template>
@@ -31,7 +38,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
       class="relative"
       size="large"
       v-model="message"
-      :autosize="{ minRows: 1, maxRows: 8 }"
+      :autosize="{ minRows: 1, maxRows: 4 }"
       @keydown.enter="handleKeyDown"
       type="textarea"
       placeholder="输入问题..."

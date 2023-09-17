@@ -16,12 +16,14 @@ defineOptions({
 });
 const responseMessage = ref({} as ChatMessage);
 const messagePanelRef = ref<HTMLElement | null>(null);
+const messageModel = ref<InstanceType<typeof Message> | null>(null);
+const chatInputModel = ref<InstanceType<typeof ChatInput> | null>(null);
 const sessions = [
   {
     id: 0,
     title: "新的聊天",
-    time: "2023-08-28",
-    sessionNum: 0,
+    time: "2023-08-28 12:00:00",
+    sessionNum: 2,
     message: [
       {
         content: "你好！",
@@ -39,28 +41,28 @@ const sessions = [
   {
     id: 1,
     title: "新的聊天",
-    time: "2023-08-28",
+    time: "2023-08-28 12:00:00",
     sessionNum: 0,
     message: []
   },
   {
     id: 2,
     title: "新的聊天",
-    time: "2023-08-28",
+    time: "2023-08-28 12:00:00",
     sessionNum: 0,
     message: []
   },
   {
     id: 3,
     title: "新的聊天",
-    time: "2023-08-28",
+    time: "2023-08-28 12:00:00",
     sessionNum: 0,
     message: []
   },
   {
     id: 4,
     title: "新的聊天",
-    time: "2023-08-28",
+    time: "2023-08-28 12:00:00",
     sessionNum: 0,
     message: []
   }
@@ -77,12 +79,13 @@ const sessionList = ref([] as ChatSession[]);
 const initSession: () => void = () => {
   sessionList.value.push(...sessions);
   if (sessionList.value.length > 0) {
-    activeSession.value = sessionList.value[0];
+    activeSession.value = sortedSessionList.value[0];
   }
 };
 
 const handleClickSession: (session: ChatSession) => void = session => {
   activeSession.value = session;
+  chatInputModel.value?.clearInput();
 };
 const handleDeleteSession: (session: ChatSession) => void = session => {
   const index = sessionList.value.findIndex(value => {
@@ -139,7 +142,27 @@ const scrollToBottom = () => {
     messagePanelRef.value.scrollTop = messagePanelRef.value.scrollHeight;
   }
 };
+const clickStopOrRefresh = i => {
+  messageModel.value[i]?.toggleTyping();
+};
+const sortedSessionList = computed(() => {
+  const list = sessionList.value;
+  if (list.length === 0) return list;
 
+  const sortedList = list.slice().sort((a, b) => {
+    const aMessage = a.message;
+    const bMessage = b.message;
+    if (!aMessage || !bMessage) return 0;
+
+    const aTimestamp = aMessage[aMessage.length - 1]?.createTime;
+    const bTimestamp = bMessage[bMessage.length - 1]?.createTime;
+    if (aTimestamp === undefined || bTimestamp === undefined) return 0;
+
+    return dayjs(bTimestamp).valueOf() - dayjs(aTimestamp).valueOf();
+  });
+
+  return sortedList;
+});
 onMounted(() => {
   initSession();
   scrollToBottom();
@@ -167,7 +190,7 @@ onMounted(() => {
         </div>
         <transition-group name="list-fade" tag="div">
           <SessionItem
-            v-for="session in sessionList"
+            v-for="session in sortedSessionList"
             :key="session.id"
             :active="session.id === activeSession.id"
             :session="session"
@@ -184,8 +207,17 @@ onMounted(() => {
           <div class="text-[rgba(black,0.7)] text-xl">
             {{ activeSession.title }}
           </div>
-          <div class="text-[rgba(black,0.5)] mb-3">
+          <div class="text-[rgba(black,0.5)]">
             与江湖百晓生的{{ activeSession.sessionNum }}条对话
+          </div>
+          <div class="text-[rgba(black,0.5)] mb-3">
+            {{
+              activeSession.message.length === 0
+                ? "创建于" + activeSession.time
+                : "最近更改于" +
+                  activeSession.message[activeSession.message.length - 1]
+                    .createTime
+            }}
           </div>
         </div>
         <el-divider />
@@ -195,6 +227,7 @@ onMounted(() => {
           <!-- <TransitionGroup name="message" tag="div"> -->
           <Message
             v-for="(message, index) in activeSession.message"
+            ref="messageModel"
             :key="message.createTime + index"
             :message="message"
             :isTyping="index === activeSession.message.length - 1 && isTyping"
@@ -204,7 +237,7 @@ onMounted(() => {
           <!-- </TransitionGroup> -->
         </div>
         <div
-          class="absolute bottom-0 left-0 w-full border-t md:border-t-0 dark:border-white/20 md:border-transparent md:dark:border-transparent bg-inherit md:!bg-transparent pt-2 md:pl-2 md:w-[calc(100%)-0.5rem]"
+          class="absolute bottom-0 left-0 w-full border-t md:border-t-0 dark:border-white/20 md:border-transparent md:dark:border-transparent bg-inherit md:!bg-transparent md:pl-2 md:w-[calc(100%)-0.5rem]"
         >
           <form
             class="mx-2 flex flex-row gap-3 last:mb-2 md:mx-4 md:last:mb-6 lg:mx-auto lg:max-w-2xl xl:max-w-3xl"
@@ -213,7 +246,9 @@ onMounted(() => {
               <div
                 class="h-full flex ml-1 md:w-full md:m-auto md:mb-4 gap-0 md:gap-2 justify-center"
               >
-                <el-button>
+                <el-button
+                  @click="clickStopOrRefresh(activeSession.message.length - 1)"
+                >
                   <IconifyIconOffline
                     :icon="Refresh"
                     class="mr-2"
@@ -223,7 +258,11 @@ onMounted(() => {
                   {{ controlTitle }}
                 </el-button>
               </div>
-              <ChatInput @send="handleSendMessage" :respond="respondValue" />
+              <ChatInput
+                @send="handleSendMessage"
+                :respond="respondValue"
+                ref="chatInputModel"
+              />
             </div>
           </form>
         </div>
@@ -233,6 +272,31 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
+// 需要优化动画
+// .message-enter-active,
+// .message-leave-active {
+//   transition: opacity 0.5s, transform 0.5s;
+// }
+// .message-enter-from,
+// .message-leave-to {
+//   opacity: 0;
+//   transform: translateX(30px);
+// }
+// .message-move {
+//   transition: transform 3s ease-in-out;
+// }
+
+//未完成的边界模糊
+@media (width >= 768px) {
+  .gradient-bg {
+    background-image: linear-gradient(
+      180deg,
+      transparent,
+      var(--el-bg-color) 60%
+    );
+  }
+}
+
 :deep(.el-card__body) {
   width: 100%;
   padding: 0%;
@@ -253,17 +317,4 @@ onMounted(() => {
 .list-move {
   transition: transform 3s ease-in-out;
 }
-// 需要优化动画
-// .message-enter-active,
-// .message-leave-active {
-//   transition: opacity 0.5s, transform 0.5s;
-// }
-// .message-enter-from,
-// .message-leave-to {
-//   opacity: 0;
-//   transform: translateX(30px);
-// }
-// .message-move {
-//   transition: transform 3s ease-in-out;
-// }
 </style>
