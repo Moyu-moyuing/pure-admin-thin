@@ -1,0 +1,1 @@
+import{l as a,s as o}from"./index-97d77e05.js";const s=a({id:"control-data",state:()=>({control:"",showSearch:!1,hasData:!1,relationTag:""}),actions:{updateControl(t){this.control=t},updateShowValue(){this.showSearch=!this.showSearch},updateHasData(){this.hasData=!this.hasData},updateRelationTag(t){this.relationTag=t}}});function r(){return s(o)}export{r as u};

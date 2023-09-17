@@ -1,0 +1,1 @@
+import{_ as o}from"./textAnnotator.vue_vue_type_script_setup_true_lang-72e61c92.js";import{d as e,o as t,c as a,a as s,b as n}from"./index-97d77e05.js";import"./entityLabel.vue_vue_type_script_setup_true_lang-76a21132.js";const _=n("h1",null,"实体命名识别页面，正在开发中......",-1),c=e({name:"NER"}),f=e({...c,setup(r){return(m,l)=>(t(),a("div",null,[_,s(o)]))}});export{f as default};
