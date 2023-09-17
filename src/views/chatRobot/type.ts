@@ -2,6 +2,7 @@ export type ChatMessage = {
   session: ChatSession;
   content: string;
   role: string;
+  createTime: string;
 };
 
 export type ChatSession = {

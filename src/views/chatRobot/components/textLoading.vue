@@ -5,7 +5,7 @@ defineOptions({
 </script>
 
 <template>
-  <div class="flex justify-around text-[#000] w-[60px] p-[10px]">
+  <div class="flex justify-around text-[#000] w-[40px] p-[10px]">
     <div class="dotsAnimation" />
     <div class="dotsAnimation" />
     <div class="dotsAnimation" />
@@ -28,8 +28,8 @@ defineOptions({
 }
 
 .dotsAnimation {
-  width: 5px;
-  height: 5px;
+  width: 3px;
+  height: 3px;
   background-color: currentcolor;
   border: 0 solid currentcolor;
   border-radius: 100%;

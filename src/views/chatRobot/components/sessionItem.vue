@@ -44,21 +44,19 @@ const handleBlur = () => {
 const updateSessionTitle = () => {
   isEditing.value = false;
   emit("updateTitle", props.session, editedTitle.value);
-  // 在事件循环的下一个tick中重置标志
 };
 const cancelUpdateSessionTitle = () => {
   isEditing.value = false;
   editedTitle.value = props.session.title;
-  // 在事件循环的下一个tick中重置标志
 };
 </script>
 
 <template>
   <div
     :class="[
-      'p-3 relative cursor-pointer overflow-hidden',
+      'group p-3 relative cursor-pointer overflow-hidden',
       'flex items-center gap-3 break-all rounded-md h-[45px]',
-      'hover:bg-[#2A2B32] hover:pr-4',
+      'hover:bg-[#2A2B32] ',
       props.active ? 'bg-[#343541]' : ''
     ]"
   >
@@ -66,14 +64,23 @@ const cancelUpdateSessionTitle = () => {
     <!-- 如果处于编辑模式，显示输入框，否则显示标题 -->
     <input
       ref="sessionInput"
-      class="bg-transparent border-0 session-title focus:ring-0 focus:border focus:border-blue-500 rounded-none focus:outline-none text-current font-inherit leading-inherit inline-block"
+      class="bg-transparent border-0 session-title focus:ring-0 focus:border focus:border-[var(--el-color-primary)] rounded-none focus:outline-none text-current font-inherit leading-inherit inline-block"
+      :class="props.active ? 'max-w-[calc(100%-65px)]' : ''"
       v-if="isEditing"
       v-model="editedTitle"
       @blur="handleBlur"
     />
-    <span class="session-title border-l border-transparent" v-else>{{
-      props.session.title
-    }}</span>
+    <div
+      class="session-title flex-1 border-l border-transparent overflow-hidden break-all relative"
+      :class="props.active ? 'max-w-[calc(100%-65px)]' : ''"
+      v-else
+    >
+      {{ props.session.title }}
+      <div
+        class="absolute right-0 inset-y-0 w-8 z-10 bg-gradient-to-l group-hover:from-[#2A2B32]"
+        :class="props.active ? 'from-[#343541] ' : 'from-[rgb(32,33,35)]'"
+      />
+    </div>
     <div
       class="absolute flex right-1 z-10 text-gray-300"
       v-if="props.active && !isEditing"
@@ -128,7 +135,7 @@ const cancelUpdateSessionTitle = () => {
   display: inline-block;
   width: 130px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
 }
 </style>
