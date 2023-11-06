@@ -5,9 +5,9 @@
  * @date: 2023-07-24 13:25:04
  -->
 <script setup lang="ts">
-import GraphPanel from "./components/graphPanel.vue";
+import GraphPanel from "./NE/components/graphPanel.vue";
 defineOptions({
-  name: "KnowledgeGraph"
+  name: "NE"
 });
 </script>
 

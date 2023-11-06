@@ -10,10 +10,18 @@ export default {
   children: [
     {
       path: "/knowledgeGraph/index",
-      name: "KnowledgeGraph",
+      name: "NE",
       component: () => import("@/views/knowledgeGraph/index.vue"),
       meta: {
-        title: "知识图谱"
+        title: "实体关系可视化"
+      }
+    },
+    {
+      path: "/knowledgeGraph/event",
+      name: "EE",
+      component: () => import("@/views/knowledgeGraph/event.vue"),
+      meta: {
+        title: "事件关系可视化"
       }
     }
   ]
