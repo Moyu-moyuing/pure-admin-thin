@@ -39,7 +39,8 @@ export default defineComponent({
   setup(props, { emit, slots, attrs }) {
     const buttonRef = ref();
     const size = ref("default");
-    const isExpandAll = ref(true);
+    // 更改源码 ——> isExpandAll = true;
+    const isExpandAll = ref(false);
     const loading = ref(false);
     const checkAll = ref(true);
     const isIndeterminate = ref(false);

@@ -6,10 +6,5 @@ defineOptions({
 </script>
 
 <template>
-  <el-card shadow="never">
-    <template #header>
-      <h2>事件抽取图表</h2>
-    </template>
-    <EventTable />
-  </el-card>
+  <EventTable />
 </template>

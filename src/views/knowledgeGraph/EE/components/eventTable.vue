@@ -1,22 +1,36 @@
 <script setup lang="ts">
 import Print from "@/utils/print";
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, toRaw } from "vue";
+import { PureTableBar } from "@/components/RePureTableBar";
 import { message } from "@/utils/message";
-import { tableData } from "../data/data";
+// import { tableData } from "../data/data";
 import { LoadingConfig, PaginationProps } from "@pureadmin/table";
-import { delay, clone } from "@pureadmin/utils";
+import { delay } from "@pureadmin/utils";
+import { useRenderIcon } from "@/components/ReIcon/src/hooks";
+import { getEventsList } from "@/api/events";
+import Printer from "@iconify-icons/ep/printer";
+import Excel from "@iconify-icons/ri/file-excel-2-line";
+import ViewJSON from "@iconify-icons/ant-design/file-search-outlined";
+import Search from "@iconify-icons/ep/search";
+import Refresh from "@iconify-icons/ep/refresh-right";
+
 // @ts-ignore
 import { utils, writeFile } from "xlsx";
 
 defineOptions({
   name: "EventTable"
 });
+
+class SearchError extends Error {}
+
 const loading = ref<boolean>(true);
 const dataList = ref([]);
-const printRef = ref(null);
+const tableRef = ref(null);
+// const tableBarRef = ref(null);
+const formRef = ref(null);
 const columns: TableColumnList = [
   { type: "expand", slot: "expand", fixed: true },
-  { type: "index" },
+  { type: "index", label: "序号", minWidth: 30 },
   {
     label: "日期",
     prop: "date"
@@ -72,6 +86,10 @@ const loadingConfig = reactive<LoadingConfig>({
         " style="stroke-width: 4px; fill: rgba(0, 0, 0, 0)"/>
       `
 });
+const eventForm = reactive({
+  sentId: "",
+  keyword: ""
+});
 
 const onCurrentChange = (currentPage: number) => {
   loadingConfig.text = `正在加载第${currentPage}页数据...}`;
@@ -83,7 +101,7 @@ const onCurrentChange = (currentPage: number) => {
 
 const handleClick = (row: any) => {
   message(
-    `您正在查看第 ${pagination.currentPage}页的第 ${row.id} 行的数据.
+    `您正在查看第 ${pagination.currentPage}页的第 ${row.id + 1} 行的数据.
     数据内容为：${JSON.stringify(row)} `,
     {
       type: "success"
@@ -91,8 +109,44 @@ const handleClick = (row: any) => {
   );
 };
 
+const onSearch: () => Promise<void> = async () => {
+  loading.value = true;
+  await getEventsList(toRaw(eventForm))
+    .then(result => {
+      if (result.success && result.data.list.length != 0) {
+        dataList.value = result.data.list;
+        pagination.total = result.data.total;
+        pagination.pageSize = result.data.pageSize;
+        pagination.currentPage = result.data.currentPage;
+      } else if (result.data.list.length == 0) {
+        dataList.value = result.data.list;
+        pagination.total = result.data.total;
+        pagination.pageSize = result.data.pageSize;
+        pagination.currentPage = result.data.currentPage;
+        throw new SearchError("无查询结果");
+      } else {
+        throw new SearchError("查询失败");
+      }
+    })
+    .then(() => {
+      message("查询成功", { type: "success" });
+    })
+    .catch(err => {
+      if (err instanceof SearchError) message(err.message, { type: "warning" });
+      else message(err.message, { type: "error" });
+    })
+    .finally(() => {
+      loading.value = false;
+    });
+};
+const resetForm = async (formRef: any) => {
+  if (!formRef) return;
+  formRef.resetFields();
+  await onSearch();
+};
+
 const print = () => {
-  Print(printRef.value.getTableDoms().tableWrapper).toPrint;
+  Print(tableRef.value.getTableDoms().tableWrapper).toPrint;
 };
 
 const exportExcel = () => {
@@ -140,59 +194,113 @@ const exportExcel = () => {
 };
 
 onMounted(() => {
-  delay(600).then(() => {
-    dataList.value = clone(tableData);
-    pagination.total = dataList.value.length;
-    loading.value = false;
-  });
+  onSearch();
 });
 </script>
 <template>
-  <div>
-    <el-button type="primary" @click="print" class="mb-[20px] float-right">
-      打印
-    </el-button>
-    <el-button
-      type="primary"
-      @click="exportExcel"
-      class="mb-[20px] float-right mr-6"
+  <div class="main">
+    <el-form
+      ref="formRef"
+      :inline="true"
+      :model="eventForm"
+      class="search-form bg-bg_color w-[99/100] pl-8 pt-[12px]"
     >
-      导出
-    </el-button>
-    <pure-table
-      border
-      ref="printRef"
-      row-key="id"
-      alignWhole="center"
-      showOverflowTooltip
-      :loading="loading"
-      :loadingConfig="loadingConfig"
-      :data="
-        dataList.slice(
-          (pagination.currentPage - 1) * pagination.pageSize,
-          pagination.currentPage * pagination.pageSize
-        )
-      "
+      <el-form-item label="句子索引：" prop="sentId">
+        <el-input
+          v-model="eventForm.sentId"
+          placeholder="请输入唯一索引"
+          clearable
+          class="!w-[200px]"
+        />
+      </el-form-item>
+      <el-form-item label="触发词：" prop="keyword">
+        <el-input
+          v-model="eventForm.keyword"
+          placeholder="请输入触发词"
+          clearable
+          class="!w-[180px]"
+        />
+      </el-form-item>
+      <el-form-item>
+        <el-button
+          type="primary"
+          :icon="useRenderIcon(Search)"
+          :loading="loading"
+          @click="onSearch"
+        >
+          搜索
+        </el-button>
+        <el-button :icon="useRenderIcon(Refresh)" @click="resetForm(formRef)">
+          重置
+        </el-button>
+      </el-form-item>
+    </el-form>
+    <PureTableBar
+      title="事件抽取图表"
       :columns="columns"
-      :pagination="pagination"
-      @page-current-change="onCurrentChange"
+      :table-ref="tableRef?.getTableRef()"
+      @refresh="onSearch"
     >
-      <template #operation="{ row }">
-        <el-button size="small" @click="handleClick(row)">查看</el-button>
+      <template #buttons>
+        <el-button :icon="useRenderIcon(Printer)" type="primary" @click="print">
+          打印
+        </el-button>
+        <el-button
+          :icon="useRenderIcon(Excel)"
+          type="primary"
+          @click="exportExcel"
+        >
+          导出
+        </el-button>
       </template>
-      <template #expand="{ row }">
-        <div class="m-4">
-          <p class="mb-4">句子索引: {{ row.sent_id }}</p>
-          <p class="mb-4">文本句: {{ row.text }}</p>
-          <h3>参数列表</h3>
-          <pure-table
-            :data="row.events.arguments"
-            :columns="childColumns"
-            :border="true"
-            alignWhole="center"
-          />
-        </div>
+      <template v-slot="{ size, dynamicColumns }">
+        <pure-table
+          border
+          ref="tableRef"
+          row-key="id"
+          alignWhole="center"
+          height="400"
+          showOverflowTooltip
+          :loading="loading"
+          :size="size"
+          :loadingConfig="loadingConfig"
+          :data="
+            dataList.slice(
+              (pagination.currentPage - 1) * pagination.pageSize,
+              pagination.currentPage * pagination.pageSize
+            )
+          "
+          :columns="dynamicColumns"
+          :pagination="pagination"
+          @page-current-change="onCurrentChange"
+        >
+          <template #operation="{ row }">
+            <el-button
+              link
+              class="reset-margin"
+              type="primary"
+              :size="size"
+              :icon="useRenderIcon(ViewJSON)"
+              @click="handleClick(row)"
+              >查看</el-button
+            >
+          </template>
+
+          <template #expand="{ row }">
+            <div class="m-4">
+              <p class="mb-4">句子索引: {{ row.sent_id }}</p>
+              <p class="mb-4">文本句: {{ row.text }}</p>
+              <h3>参数列表</h3>
+              <pure-table
+                :data="row.events.arguments"
+                :columns="childColumns"
+                :border="true"
+                alignWhole="center"
+              />
+            </div>
+          </template>
+        </pure-table>
       </template>
-    </pure-table>
+    </PureTableBar>
   </div>
 </template>
