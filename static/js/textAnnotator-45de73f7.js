@@ -1,1 +1,0 @@
-import{_ as o}from"./textAnnotator.vue_vue_type_script_setup_true_lang-72e61c92.js";import"./entityLabel.vue_vue_type_script_setup_true_lang-76a21132.js";import"./index-97d77e05.js";export{o as default};
