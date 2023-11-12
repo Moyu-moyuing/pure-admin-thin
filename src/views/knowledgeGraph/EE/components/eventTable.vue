@@ -96,6 +96,10 @@ const onCurrentChange = async (currentPage: number) => {
   loadingConfig.text = `正在加载第${currentPage}页数据...}`;
   await handleSearch(false, currentPage);
 };
+const onSizeChange = async () => {
+  submitForm.value.pageSize = pagination.pageSize;
+  await handleSearch(false, 1);
+};
 
 const handleClick = (row: any) => {
   message(
@@ -285,6 +289,7 @@ onMounted(() => {
           :columns="dynamicColumns"
           :pagination="pagination"
           @page-current-change="onCurrentChange"
+          @page-size-change="onSizeChange"
         >
           <template #operation="{ row }">
             <el-button
