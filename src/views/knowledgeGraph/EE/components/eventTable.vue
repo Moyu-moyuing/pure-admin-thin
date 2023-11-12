@@ -13,6 +13,7 @@ import Excel from "@iconify-icons/ri/file-excel-2-line";
 import ViewJSON from "@iconify-icons/ant-design/file-search-outlined";
 import Search from "@iconify-icons/ep/search";
 import Refresh from "@iconify-icons/ep/refresh-right";
+import Copy from "@iconify-icons/ep/copy-document";
 
 // @ts-ignore
 import { utils, writeFile } from "xlsx";
@@ -99,6 +100,26 @@ const onCurrentChange = async (currentPage: number) => {
 const onSizeChange = async () => {
   submitForm.value.pageSize = pagination.pageSize;
   await handleSearch(false, 1);
+};
+const copyClick = row => {
+  // const input = document.createElement("input");
+  // input.setAttribute("readonly", "readonly");
+  // input.setAttribute("value", row.sent_id);
+  // document.body.appendChild(input);
+  // input.select();
+  // if (document.execCommand("copy")) {
+  //   document.execCommand("copy");
+  //   message("复制成功", { type: "success" });
+  // }
+  // document.body.removeChild(input);
+  navigator.clipboard.writeText(row.sent_id).then(
+    () => {
+      message("复制成功", { type: "success" });
+    },
+    () => {
+      message("复制失败", { type: "error" });
+    }
+  );
 };
 
 const handleClick = (row: any) => {
@@ -305,7 +326,17 @@ onMounted(() => {
 
           <template #expand="{ row }">
             <div class="m-4">
-              <p class="mb-4">句子索引: {{ row.sent_id }}</p>
+              <p class="mb-4">
+                句子索引: {{ row.sent_id }}
+                <el-button
+                  link
+                  class="reset-margin"
+                  type="primary"
+                  :size="size"
+                  :icon="useRenderIcon(Copy)"
+                  @click="copyClick(row)"
+                />
+              </p>
               <p class="mb-4">文本句: {{ row.text }}</p>
               <h3>参数列表</h3>
               <pure-table
