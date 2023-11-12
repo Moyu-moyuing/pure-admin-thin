@@ -9,6 +9,7 @@ import * as d3 from "d3";
 import Control from "./control.vue";
 import NodePanel from "./nodePanel.vue";
 import SearchNodes from "./searchNodes.vue";
+import { message } from "@/utils/message";
 import { ref, Ref, onMounted } from "vue";
 import { cloneDeep } from "@pureadmin/utils";
 import { useControlD3StoreHook } from "@/store/modules/controlD3";
@@ -20,7 +21,6 @@ import {
   getDatasByName,
   getDatasByRelation
 } from "@/api/kgData";
-import { ElMessage } from "element-plus";
 // import list from "../data/data.js";
 
 defineOptions({
@@ -472,22 +472,20 @@ const tagSelect: (value: string) => Promise<void> = async value => {
       }
     })
     .then(() => {
-      ElMessage({
-        message: "查找成功",
+      message("查找成功", {
         type: "success"
       });
     })
     .catch(error => {
       if (error instanceof SearchError) {
-        ElMessage({
-          message: "查找失败," + error.message + ",即将自动初始化",
+        message("查找失败," + error.message + ",即将自动初始化", {
           type: "error"
         });
         clearGraph();
         scale.value = 1;
         init();
       } else {
-        ElMessage.error("查找失败", error.message);
+        message("查找失败" + error.message, { type: "error" });
       }
     })
     .finally(() => {
@@ -548,22 +546,20 @@ const searchNodes: (value: string) => Promise<void> = async value => {
       }
     })
     .then(() => {
-      ElMessage({
-        message: "查找成功",
+      message("查找成功", {
         type: "success"
       });
     })
     .catch(error => {
       if (error instanceof SearchError) {
-        ElMessage({
-          message: "查找失败," + error.message + ",即将自动初始化",
+        message("查找失败," + error.message + ",即将自动初始化", {
           type: "error"
         });
         clearGraph();
         scale.value = 1;
         init();
       } else {
-        ElMessage.error("查找失败,", error.message);
+        message("查找失败," + error.message, { type: "error" });
       }
     })
     .finally(() => {
@@ -586,13 +582,12 @@ const init: () => Promise<void> = async () => {
       }
     })
     .then(() => {
-      ElMessage({
-        message: "初始化成功",
+      message("初始化成功", {
         type: "success"
       });
     })
     .catch(error => {
-      ElMessage.error("初始化失败", error.message);
+      message("初始化失败" + error.message, { type: "error" });
     })
     .finally(() => {
       loading.value = false;
