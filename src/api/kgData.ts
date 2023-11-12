@@ -14,8 +14,10 @@ export type List = {
   links: Array<Link>;
 };
 export type allKgDataResult = {
+  code: number;
   success: boolean;
-  data: {
+  message: string;
+  data?: {
     /** Neo4j数据 */
     kgDatas: List;
     /** 节点数 */
@@ -29,8 +31,10 @@ export type allKgDataResult = {
   };
 };
 export type KgDataResult = {
+  code: number;
   success: boolean;
-  data: {
+  message: string;
+  data?: {
     /** Neo4j数据 */
     kgDatas: List;
     /** 节点数 */

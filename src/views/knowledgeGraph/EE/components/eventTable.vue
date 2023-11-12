@@ -5,7 +5,7 @@ import { PureTableBar } from "@/components/RePureTableBar";
 import { message } from "@/utils/message";
 // import { tableData } from "../data/data";
 import { LoadingConfig, PaginationProps } from "@pureadmin/table";
-import { delay } from "@pureadmin/utils";
+// import { delay } from "@pureadmin/utils";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { getEventsList } from "@/api/events";
 import Printer from "@iconify-icons/ep/printer";
@@ -27,6 +27,7 @@ const loading = ref<boolean>(true);
 const dataList = ref([]);
 const tableRef = ref(null);
 // const tableBarRef = ref(null);
+const submitForm = ref(null);
 const formRef = ref(null);
 const columns: TableColumnList = [
   { type: "expand", slot: "expand", fixed: true },
@@ -91,12 +92,9 @@ const eventForm = reactive({
   keyword: ""
 });
 
-const onCurrentChange = (currentPage: number) => {
+const onCurrentChange = async (currentPage: number) => {
   loadingConfig.text = `正在加载第${currentPage}页数据...}`;
-  loading.value = true;
-  delay(600).then(() => {
-    loading.value = false;
-  });
+  await handleSearch(false, currentPage);
 };
 
 const handleClick = (row: any) => {
@@ -109,16 +107,34 @@ const handleClick = (row: any) => {
   );
 };
 
+const submitEventForm = pageNumber => {
+  return new Object({
+    ...toRaw(eventForm),
+    pageSize: pagination.pageSize,
+    pageNo: pageNumber
+  });
+};
+
+const handleSearch = async (isInit, currentPage) => {
+  if (isInit) {
+    submitForm.value = submitEventForm(1);
+    await onSearch();
+  } else {
+    submitForm.value.pageNo = currentPage;
+    await onSearch();
+  }
+};
+
 const onSearch: () => Promise<void> = async () => {
   loading.value = true;
-  await getEventsList(toRaw(eventForm))
+  await getEventsList(submitForm.value)
     .then(result => {
-      if (result.success && result.data.list.length != 0) {
+      if (result.code === 200 && result.success) {
         dataList.value = result.data.list;
         pagination.total = result.data.total;
         pagination.pageSize = result.data.pageSize;
         pagination.currentPage = result.data.currentPage;
-      } else if (result.data.list.length == 0) {
+      } else if (result.code === 404 && !result.success) {
         dataList.value = result.data.list;
         pagination.total = result.data.total;
         pagination.pageSize = result.data.pageSize;
@@ -142,7 +158,8 @@ const onSearch: () => Promise<void> = async () => {
 const resetForm = async (formRef: any) => {
   if (!formRef) return;
   formRef.resetFields();
-  await onSearch();
+  //如果是重置或者搜索全部默认置1，只有点击分页器时才加上分页查询限制
+  await handleSearch(true, 1);
 };
 
 const print = () => {
@@ -194,7 +211,7 @@ const exportExcel = () => {
 };
 
 onMounted(() => {
-  onSearch();
+  handleSearch(true, 1);
 });
 </script>
 <template>
@@ -226,7 +243,7 @@ onMounted(() => {
           type="primary"
           :icon="useRenderIcon(Search)"
           :loading="loading"
-          @click="onSearch"
+          @click="handleSearch(true, 1)"
         >
           搜索
         </el-button>
@@ -264,12 +281,7 @@ onMounted(() => {
           :loading="loading"
           :size="size"
           :loadingConfig="loadingConfig"
-          :data="
-            dataList.slice(
-              (pagination.currentPage - 1) * pagination.pageSize,
-              pagination.currentPage * pagination.pageSize
-            )
-          "
+          :data="dataList"
           :columns="dynamicColumns"
           :pagination="pagination"
           @page-current-change="onCurrentChange"

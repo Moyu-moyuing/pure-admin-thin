@@ -64,7 +64,7 @@ const handleScroll = () => {
   if (messagePanel) {
     const { scrollTop, scrollHeight, clientHeight } = messagePanel;
     shouldScrollToBottom.value = scrollHeight - scrollTop - clientHeight <= 1;
-    console.log(shouldScrollToBottom.value);
+    // console.log(shouldScrollToBottom.value);
   }
 };
 const scrollToBottom = () => {

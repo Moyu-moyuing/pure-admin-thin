@@ -441,7 +441,7 @@ const clearGraph: () => void = () => {
 };
 
 const eventControl: (name: string) => void = name => {
-  console.log(name);
+  // console.log(name);
   if (name === "reset") {
     clearGraph();
     scale.value = 1;

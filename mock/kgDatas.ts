@@ -29,7 +29,9 @@ export default [
     method: "get",
     response: () => {
       return {
+        code: 200,
         success: true,
+        message: "查询成功",
         data: {
           kgDatas: list,
           nodeLength: list.nodes.length,
@@ -45,7 +47,12 @@ export default [
     method: "get",
     response: ({ query }) => {
       if (!list.nodes.find(item => item.name === query.name)) {
-        return { success: false, data: {} };
+        return {
+          code: 404,
+          success: false,
+          message: "未找到相关实体",
+          data: {}
+        };
       } else {
         let newLinks = list.links.filter(
           object => object.source === query.name || object.target === query.name
@@ -71,7 +78,9 @@ export default [
           links: newLinks
         };
         return {
+          code: 200,
           success: true,
+          message: "查询成功",
           data: {
             kgDatas: newList,
             nodeLength: newList.nodes.length,
@@ -86,7 +95,12 @@ export default [
     method: "get",
     response: ({ query }) => {
       if (!list.links.find(item => item.relationship === query.relations)) {
-        return { success: false, data: {} };
+        return {
+          code: 404,
+          success: false,
+          message: "未找到相关关系",
+          data: {}
+        };
       } else {
         const newLinks = list.links.filter(
           object => object.relationship === query.relations
@@ -105,7 +119,9 @@ export default [
           links: newLinks
         };
         return {
+          code: 200,
           success: true,
+          message: "查询成功",
           data: {
             kgDatas: newList,
             nodeLength: newList.nodes.length,

@@ -439,7 +439,7 @@ const testData = [
 
 export default [
   {
-    url: "/event/list",
+    url: "/events",
     method: "post",
     response: ({ body }) => {
       let filteredList = testData;
@@ -453,20 +453,37 @@ export default [
           item => item.events.trigger.keywords === body.keyword
         );
       }
+      //分页
+      const totalItems = filteredList.length;
+      const totalPages = Math.ceil(totalItems / body.pageSize);
+      const start = (body.pageNo - 1) * body.pageSize;
+      const end = start + body.pageSize;
+      filteredList = filteredList.slice(start, end);
+      //模拟了数据库的自然增长序列和日期
       filteredList = filteredList.map((item, index) => {
-        Object.assign(item, {
+        return {
+          ...item,
           id: index,
           date: dayjs(new Date()).format("YYYY-MM-DD")
-        });
-        return item;
+        };
       });
+      if (filteredList.length === 0)
+        return {
+          code: 404,
+          success: false,
+          message: "未找到相关事件"
+        };
+
       return {
         success: true,
+        code: 200,
+        message: "查询成功",
         data: {
           list: filteredList,
-          total: filteredList.length, // 总条目数
-          pageSize: 10, // 每页显示条目个数
-          currentPage: 1 // 当前页数
+          total: totalItems, // 总条目数
+          totalPages: totalPages,
+          pageSize: body.pageSize, // 每页显示条目个数
+          currentPage: body.pageNo // 当前页数
         }
       };
     }
