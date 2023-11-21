@@ -175,7 +175,12 @@ const renderGraph: () => SVGSVGElement = () => {
     .attr(
       "id",
       //@ts-ignore 忽略类型检查
-      d => d.source.name + "_" + d.relationship + "_" + d.target.name
+      d =>
+        d.source.name +
+        "_" +
+        cleanUpString(d.relationship) +
+        "_" +
+        d.target.name
     );
 
   //画节点
@@ -224,11 +229,23 @@ const renderGraph: () => SVGSVGElement = () => {
     .attr(
       "xlink:href",
       //@ts-ignore 忽略类型检查
-      d => "#" + d.source.name + "_" + d.relationship + "_" + d.target.name
+      d =>
+        "#" +
+        d.source.name +
+        "_" +
+        cleanUpString(d.relationship) +
+        "_" +
+        d.target.name
     )
     .attr(
       "id", //@ts-ignore 忽略类型检查
-      d => "text_" + d.source.name + "_" + d.relationship + "_" + d.target.name
+      d =>
+        "text_" +
+        d.source.name +
+        "_" +
+        cleanUpString(d.relationship) +
+        "_" +
+        d.target.name
     )
     .attr("startOffset", "50%")
     //@ts-ignore 忽略类型检查
@@ -341,14 +358,19 @@ const renderGraph: () => SVGSVGElement = () => {
     links.forEach(l => {
       if (d.target.id === l.source.name || d.target.id === l.target.name) {
         d3.select(
-          "#" + l.source.name + "_" + l.relationship + "_" + l.target.name
+          "#" +
+            l.source.name +
+            "_" +
+            cleanUpString(l.relationship) +
+            "_" +
+            l.target.name
         ).attr("opacity", 1);
         d3.select(
           "#" +
             "text_" +
             l.source.name +
             "_" +
-            l.relationship +
+            cleanUpString(l.relationship) +
             "_" +
             l.target.name
         ).style("opacity", 1);
@@ -375,10 +397,21 @@ const resetAllOpacity = () => {
   d3.selectAll("circle").attr("opacity", 1);
   links.forEach(l => {
     d3.selectAll(
-      "#" + l.source.name + "_" + l.relationship + "_" + l.target.name
+      "#" +
+        l.source.name +
+        "_" +
+        cleanUpString(l.relationship) +
+        "_" +
+        l.target.name
     ).attr("opacity", 1);
     d3.selectAll(
-      "#" + "text_" + l.source.name + "_" + l.relationship + "_" + l.target.name
+      "#" +
+        "text_" +
+        l.source.name +
+        "_" +
+        cleanUpString(l.relationship) +
+        "_" +
+        l.target.name
     ).style("opacity", 1);
   });
   nodes.forEach(n => {
@@ -389,17 +422,42 @@ const hideAllLight = () => {
   d3.selectAll("circle").attr("opacity", 0.08);
   links.forEach(l => {
     d3.selectAll(
-      "#" + l.source.name + "_" + l.relationship + "_" + l.target.name
+      "#" +
+        l.source.name +
+        "_" +
+        cleanUpString(l.relationship) +
+        "_" +
+        l.target.name
     ).attr("opacity", 0.03);
     d3.selectAll(
-      "#" + "text_" + l.source.name + "_" + l.relationship + "_" + l.target.name
+      "#" +
+        "text_" +
+        l.source.name +
+        "_" +
+        cleanUpString(l.relationship) +
+        "_" +
+        l.target.name
     ).style("opacity", 0.03);
+    console.log(
+      d3.selectAll(
+        "#" +
+          l.source.name +
+          "_" +
+          cleanUpString(l.relationship) +
+          "_" +
+          l.target.name
+      )
+    );
   });
   nodes.forEach(n => {
     d3.selectAll("#" + "text_" + n.name).style("opacity", 0.03);
   });
 };
 
+function cleanUpString(str) {
+  // 使用正则表达式替换空格为下划线，你可以根据需要进行修改
+  return str.replace(/\s/g, "_");
+}
 const drag: (
   simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>,
   g: d3.Selection<SVGGElement, unknown, HTMLElement, any>
